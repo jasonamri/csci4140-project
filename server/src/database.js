@@ -1,19 +1,25 @@
 import dotenv from 'dotenv';
-import mongoose from 'mongoose';
+import { Pool } from 'pg';
 
 dotenv.config();
+
 class Database {
-  static connect() {
-    mongoose
-      .connect(process.env.DATABASE, { useNewUrlParser: true })
-      .then(() => {
-        Database.status = true;
-        console.log('Database Connection Successful');
-      })
-      .catch(err => {
-        Database.status = false;
-        console.log(`Database Connection Error ${err}`);
-      });
+  static pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+       rejectUnauthorized: false
+   }
+  });
+
+  static async connect() {
+    try {
+      await this.pool.connect();
+      this.status = true;
+      console.log('Database connection successful');
+    } catch (err) {
+      this.status = false;
+      console.log(`Database connection error: ${err}`);
+    }
   }
 }
 
