@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "MERN starter full stack app",
   "engines": {
-    "node": "12.13.1"
+    "node": ">=12.13.1"
   },
   "scripts": {
     "lint": "eslint --ignore-path .gitignore .",
