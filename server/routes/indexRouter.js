@@ -1,5 +1,5 @@
-import express from 'express';
-import Database from '../database';
+const express = require('express');
+const Database = require('../modules/database');
 
 const router = express.Router();
 
@@ -8,4 +8,4 @@ router.get('/database', (req, res) => {
   res.send({ status: Database.status });
 });
 
-export default router;
+module.exports = router;
