@@ -1,4 +1,4 @@
-import FETCH_DB_STATUS from '../constants/actionTypes';
+import { FETCH_DB_STATUS } from '../constants/actionTypes';
 
 const initialState = {
   status: undefined

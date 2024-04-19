@@ -1,10 +1,10 @@
 import axios from 'axios';
-import FETCH_DB_STATUS from '../constants/actionTypes';
+import { FETCH_DB_STATUS } from '../constants/actionTypes';
 
 const fetchDBStatus = () => dispatch => {
   axios({
     method: 'get',
-    url: '/api/database',
+    url: 'http://localhost:8080/api/database',
     timout: 1000
   }).then(response => {
     dispatch({
@@ -13,4 +13,5 @@ const fetchDBStatus = () => dispatch => {
     });
   });
 };
-export default fetchDBStatus;
+
+export { fetchDBStatus };
