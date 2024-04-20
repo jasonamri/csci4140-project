@@ -78,7 +78,7 @@ router.get('/get-all-pls', ensureLoggedIn, ensureValidToken, async (req, res) =>
             playlists: playlists
         }
     }
-    console.log(result)
+
     res.json(result);
 });
 

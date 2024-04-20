@@ -57,7 +57,7 @@ class Spotify {
     }
 
     async unlink(username) {
-        // store tokens to database
+        // clear tokens from database
         const query = `UPDATE users SET spotify_access_token = NULL, spotify_refresh_token = NULL, spotify_token_expires = NULL, spotify_status = 'UNLINKED' WHERE username = '${username}'`;
         await Database.query(query);
 
@@ -79,7 +79,7 @@ class Spotify {
 
         return {
             status: 'success',
-            message: 'Access token refreshed successfully',
+            message: 'Spotify ccess token refreshed successfully',
             data: {
                 access_token: access_token,
                 token_expiry: token_expiry

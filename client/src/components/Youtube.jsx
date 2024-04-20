@@ -7,8 +7,9 @@ const PlaylistComponent = () => {
   useEffect(() => {
     const fetchPlaylists = async () => {
       try {
-        const response = await axios.get('/spotify/get-all-pls');
+        const response = await axios.get('/youtube/get-all-pls');
         setPlaylists(response.data.data.playlists);
+        console.log(response.data.data.playlists);
       } catch (error) {
         console.error('Error fetching playlists:', error);
       }
@@ -22,7 +23,7 @@ const PlaylistComponent = () => {
       <h2>Playlists</h2>
       <ul>
         {playlists.map((playlist, index) => (
-          <li key={index}>{playlist.name}</li>
+          <li key={index}>{playlist.snippet.title}</li>
         ))}
       </ul>
     </div>

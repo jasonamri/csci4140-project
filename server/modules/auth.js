@@ -29,7 +29,7 @@ class Auth {
     static async login(username, password) {
         // Retrieve hashed password from database
         const query = {
-            text: 'SELECT password_hash FROM users WHERE username = $1',
+            text: 'SELECT * FROM users WHERE username = $1',
             values: [username]
         };
         const res = await Database.query(query);
@@ -49,14 +49,8 @@ class Auth {
         };
         await Database.query(query2);
 
-        // Get user details
-        const query3 = {
-            text: 'SELECT * FROM users WHERE username = $1',
-            values: [username]
-        };
-        const res2 = await Database.query(query3);
-
-        return { status: 'success', message: 'Login successful', data: res2.rows[0] };
+        // return user data
+        return { status: 'success', message: 'Login successful', data: res.rows[0] };
     }
 
     static async changeEmail(username, newEmail) {

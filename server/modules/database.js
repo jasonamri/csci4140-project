@@ -107,7 +107,7 @@ class Database {
 
       // Validate tables created
       const res = await this.query('SELECT table_name FROM information_schema.tables WHERE table_schema = \'public\';');
-      console.log('Tables created:', res.rows.map(row => row.table_name).join(', '));
+      console.log('Tables available:', res.rows.map(row => row.table_name).join(', '));
 
       // Close connection
       client.release();
