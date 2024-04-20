@@ -9,6 +9,8 @@ const indexRouter = require('./routes/indexRouter');
 const authRouter = require('./routes/authRouter');
 const spotifyRouter = require('./routes/spotifyRouter');
 const youtubeRouter = require('./routes/youtubeRouter');
+const playlistRouter = require('./routes/playlistRouter');
+const songRouter = require('./routes/songRouter');
 const Database = require('./modules/database');
 
 const app = express();
@@ -50,6 +52,8 @@ app.use('/api/', indexRouter);
 app.use('/api/spotify', spotifyRouter);
 app.use('/api/youtube', youtubeRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/playlist', playlistRouter);
+app.use('/api/song', songRouter);
 
 // launch express
 const port = process.env.PORT || 8080;

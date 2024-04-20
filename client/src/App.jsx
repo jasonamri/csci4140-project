@@ -5,6 +5,9 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 // pages
 import Landing from './components/Landing';
 import Home from './components/Landing';
+import Playlist from './components/Playlist';
+import Import from './components/Import';
+import Share from './components/Share';
 import Login from './components/Login';
 import Register from './components/Register';
 import Logout from './components/Logout';
@@ -22,6 +25,9 @@ const App = () => (
       <Route exact path="/" element={< Landing />} />
       <Route path="/home" element={< Home />} />
       <Route path="/profile" element={< Profile />} />
+      <Route path="/playlist" element={< Playlist />} />
+      <Route path="/import" element={< Import />} />
+      <Route path="/share" element={< Share />} />
       <Route path="/login" element={< Login />} />
       <Route path="/register" element={< Register />} />
       <Route path="/logout" element={< Logout />} />
