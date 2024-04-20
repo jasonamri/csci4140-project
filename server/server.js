@@ -31,9 +31,10 @@ app.use('/api/', indexRouter);
 app.use('/api/spotify', spotifyRouter);
 app.use('/api/youtube', youtubeRouter);
 
-// connect to the db
-Database.connect();
-
 // launch express
 const port = process.env.PORT || 8080;
 app.listen(port, () => console.log(`App listening on port: ${port}`));
+
+// test database connection
+Database.test();
+Database.init();
