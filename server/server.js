@@ -1,17 +1,36 @@
 // npm module imports
 const express = require('express');
+const session = require('express-session');
 const cors = require('cors');
 const path = require('path');
 
 // local import
 const indexRouter = require('./routes/indexRouter');
+const authRouter = require('./routes/authRouter');
 const spotifyRouter = require('./routes/spotifyRouter');
 const youtubeRouter = require('./routes/youtubeRouter');
 const Database = require('./modules/database');
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true
+}));
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+
+// setup session
+app.use(session({
+  store: new (require('connect-pg-simple')(session))({
+    pool: Database.pool,
+    tableName: 'sessions'
+  }),
+  secret: 'csci4140',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false }
+}));
 
 // serve React build
 /*
@@ -30,6 +49,7 @@ app.get('/', (req, res) => {
 app.use('/api/', indexRouter);
 app.use('/api/spotify', spotifyRouter);
 app.use('/api/youtube', youtubeRouter);
+app.use('/api/auth', authRouter);
 
 // launch express
 const port = process.env.PORT || 8080;
