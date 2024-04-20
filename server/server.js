@@ -6,6 +6,7 @@ const path = require('path');
 // local import
 const indexRouter = require('./routes/indexRouter');
 const spotifyRouter = require('./routes/spotifyRouter');
+const youtubeRouter = require('./routes/youtubeRouter');
 const Database = require('./modules/database');
 
 const app = express();
@@ -28,6 +29,7 @@ app.get('/', (req, res) => {
 // server backend
 app.use('/api/', indexRouter);
 app.use('/api/spotify', spotifyRouter);
+app.use('/api/youtube', youtubeRouter);
 
 // connect to the db
 Database.connect();
