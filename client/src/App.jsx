@@ -10,6 +10,8 @@ import Register from './components/Register';
 import Logout from './components/Logout';
 import Spotify from './components/Spotify';
 import Profile from './components/Profile';
+import LinkSpotify from './components/LinkSpotify';
+import CallbackSpotify from './components/CallbackSpotify';
 
 const App = () => (
   <Router>
@@ -21,6 +23,8 @@ const App = () => (
       <Route path="/register" element={< Register />} />
       <Route path="/logout" element={< Logout />} />
       <Route path="/spotify" element={< Spotify />} />
+      <Route path="/link-spotify" element={< LinkSpotify />} />
+      <Route path="/callback-spotify" element={< CallbackSpotify />} />
     </Routes>
   </Router>
 );

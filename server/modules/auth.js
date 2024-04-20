@@ -49,7 +49,14 @@ class Auth {
         };
         await Database.query(query2);
 
-        return { status: 'success', message: 'Login successful'};
+        // Get user details
+        const query3 = {
+            text: 'SELECT * FROM users WHERE username = $1',
+            values: [username]
+        };
+        const res2 = await Database.query(query3);
+
+        return { status: 'success', message: 'Login successful', data: res2.rows[0] };
     }
 
     static async changeEmail(username, newEmail) {

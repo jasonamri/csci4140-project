@@ -59,13 +59,19 @@ class Database {
         spotify_status VARCHAR(50) DEFAULT 'UNLINKED' CHECK (spotify_status IN ('LINKED', 'UNLINKED')),
         spotify_access_token TEXT,
         spotify_refresh_token TEXT,
+        spotify_token_expires TIMESTAMP WITH TIME ZONE,
         youtube_status VARCHAR(50) DEFAULT 'UNLINKED' CHECK (youtube_status IN ('LINKED', 'UNLINKED')),
         youtube_access_token TEXT,
         youtube_refresh_token TEXT,
+        youtube_token_expires TIMESTAMP WITH TIME ZONE,
         date_created TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         date_last_login TIMESTAMP WITH TIME ZONE
     );`;
       await this.query(usersTable);
+
+      // Add indexes for Users table (for performance)
+      await this.query('CREATE INDEX IF NOT EXISTS idx_users_spotify_status ON users(spotify_status);');
+      await this.query('CREATE INDEX IF NOT EXISTS idx_users_youtube_status ON users(youtube_status);');
 
       // Create Playlists table
       const playlistsTable = `CREATE TABLE IF NOT EXISTS playlists (

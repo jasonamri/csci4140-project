@@ -1,5 +1,6 @@
 const express = require('express');
 const Auth = require('../modules/auth');
+const { ensureLoggedIn } = require('../modules/middleware');
 
 const router = express.Router();
 
@@ -19,9 +20,12 @@ router.post('/login', async (req, res) => {
 
     // set session if successful
     if (result.status === 'success') {
-        console.log('setting session', username);
-        req.session.username = username;
-        console.log('session set', req.session.username);
+        const user_data = result.data;
+        for (const key in user_data) {
+            if (user_data.hasOwnProperty(key)) {
+                req.session[key] = user_data[key];
+            }
+        }
     }
 
     // return result
@@ -42,7 +46,6 @@ router.get('/logout', (req, res) => {
 });
 
 router.get('/status', (req, res) => {
-    console.log('checking status', req.session.username)
     // check session
     const result = {
         status: req.session.username ? 'logged-in' : 'logged-out',
@@ -53,13 +56,7 @@ router.get('/status', (req, res) => {
     res.json(result);
 });
 
-router.post('/change-email', async (req, res) => {
-    // check session
-    if (!req.session.username) {
-        res.json({ status: 'fail', message: 'Not logged in' });
-        return;
-    }
-
+router.post('/change-email', ensureLoggedIn, async (req, res) => {
     // execute change email
     const { newEmail } = req.body;
     const result = await Auth.changeEmail(req.session.username, newEmail);
@@ -68,14 +65,7 @@ router.post('/change-email', async (req, res) => {
     res.json(result);
 });
 
-router.post('/change-password', async (req, res) => {
-    // check session
-    console.log('checking session', req.session.username)
-    if (!req.session.username) {
-        res.json({ status: 'fail', message: 'Not logged in' });
-        return;
-    }
-
+router.post('/change-password', ensureLoggedIn, async (req, res) => {
     // execute change password
     const { currentPassword, newPassword } = req.body;
     const result = await Auth.changePassword(req.session.username, currentPassword, newPassword);

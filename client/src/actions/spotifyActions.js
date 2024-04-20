@@ -9,7 +9,7 @@ const spotify__get_all_pls = () => dispatch => {
   }).then(response => {
     dispatch({
       type: SPOTIFY_GET_ALL_PLAYLISTS,
-      payload: response.data
+      payload: response.data.data.playlists
     });
   }).catch(error => {
     console.error('Error fetching Spotify status:', error);

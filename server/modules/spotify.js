@@ -1,5 +1,6 @@
 const SpotifyWebApi = require('spotify-web-api-node');
 const dotenv = require('dotenv');
+const Database = require('./database');
 
 dotenv.config();
 
@@ -27,7 +28,7 @@ class Spotify {
         this.spotifyApi = new SpotifyWebApi({
             clientId: process.env.SPOTIFY_CLIENT_ID,
             clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-            redirectUri: 'http://localhost:8080/api/spotify/callback'
+            redirectUri: 'http://localhost:3000/callback-spotify'
         });
     }
 
@@ -35,13 +36,60 @@ class Spotify {
         return this.spotifyApi.createAuthorizeURL(scopes);
     }
 
-    async getAccessToken(code) {
+    async link(username, code) {
         const data = await this.spotifyApi.authorizationCodeGrant(code);
-        this.spotifyApi.setAccessToken(data.body['access_token']);
-        this.spotifyApi.setRefreshToken(data.body['refresh_token']);
+        const { access_token, refresh_token, expires_in } = data.body;
+        const token_expiry = new Date(Date.now() + expires_in * 1000).toISOString();
+
+        // store tokens to database
+        const query = `UPDATE users SET spotify_access_token = '${access_token}', spotify_refresh_token = '${refresh_token}', spotify_token_expires = '${token_expiry}', spotify_status = 'LINKED' WHERE username = '${username}'`;
+        await Database.query(query);
+
+        return {
+            status: 'success',
+            message: 'Spotify account linked successfully',
+            data: {
+                access_token: access_token,
+                refresh_token: refresh_token,
+                token_expiry: token_expiry
+            }
+        }
     }
 
-    async getPlaylists() {
+    async unlink(username) {
+        // store tokens to database
+        const query = `UPDATE users SET spotify_access_token = NULL, spotify_refresh_token = NULL, spotify_token_expires = NULL, spotify_status = 'UNLINKED' WHERE username = '${username}'`;
+        await Database.query(query);
+
+        return {
+            status: 'success',
+            message: 'Spotify account unlinked successfully'
+        }
+    }
+
+    async refreshAccessToken(username, refresh_token) {
+        this.spotifyApi.setRefreshToken(refresh_token);
+        const data = await this.spotifyApi.refreshAccessToken();
+        const { access_token, expires_in } = data.body;
+        const token_expiry = new Date(Date.now() + expires_in * 1000).toISOString();
+
+        // store tokens to database
+        const query = `UPDATE users SET spotify_access_token = '${access_token}', spotify_token_expires = '${token_expiry}' WHERE username = '${username}'`;
+        await Database.query(query);
+
+        return {
+            status: 'success',
+            message: 'Access token refreshed successfully',
+            data: {
+                access_token: access_token,
+                token_expiry: token_expiry
+            }
+        }
+    }
+
+
+    async getPlaylists(access_token) {
+        this.spotifyApi.setAccessToken(access_token);
         const data = await this.spotifyApi.getUserPlaylists();
         return data.body.items;
     }
