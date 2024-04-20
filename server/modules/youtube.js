@@ -60,8 +60,8 @@ class Youtube {
 
     async refreshAccessToken(username, refresh_token) {
         this.oauth2Client.setCredentials({ refresh_token });
-        const { tokens } = await this.oauth2Client.refreshAccessToken();
-        const { access_token, expiry_date } = tokens;
+        const result = await this.oauth2Client.refreshAccessToken();
+        const { access_token, expiry_date } = result.credentials;
         const token_expiry = new Date(expiry_date).toISOString();
 
         // store tokens to database
@@ -80,11 +80,7 @@ class Youtube {
 
     async getPlaylists(access_token) {
         this.oauth2Client.setCredentials({ access_token });
-
-        const youtube = google.youtube({
-            version: 'v3',
-            auth: this.oauth2Client
-        });
+        const youtube = google.youtube({ version: 'v3', auth: this.oauth2Client });
 
         const response = await youtube.playlists.list({
             part: 'snippet',
@@ -92,6 +88,28 @@ class Youtube {
         });
 
         return response.data.items;
+    }
+
+    async search(access_token, query, count) {
+        this.oauth2Client.setCredentials({ access_token });
+        const youtube = google.youtube({ version: 'v3', auth: this.oauth2Client });
+
+        const response = await youtube.search.list({
+            part: 'snippet',
+            q: query,
+            maxResults: count
+        });
+
+        const videos = response.data.items.map(item => {
+            return {
+                id: item.id.videoId,
+                name: item.snippet.title,
+                artist: item.snippet.channelTitle,
+                image: item.snippet.thumbnails.default.url
+            }
+        });
+
+        return videos;
     }
 
 }

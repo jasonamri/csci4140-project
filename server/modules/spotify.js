@@ -94,6 +94,24 @@ class Spotify {
         return data.body.items;
     }
 
+    async search(access_token, query, count) {
+        this.spotifyApi.setAccessToken(access_token);
+        const results = await this.spotifyApi.searchTracks(query, { limit: count });
+        
+        const tracks = results.body.tracks.items.map(track => {
+            return {
+                id: track.id,
+                name: track.name,
+                artist: track.artists[0].name,
+                album: track.album.name,
+                image: track.album.images[0].url,
+                duration: track.duration_ms
+            }
+        });
+
+        return tracks;
+    }
+
 }
 
 module.exports = Spotify;
