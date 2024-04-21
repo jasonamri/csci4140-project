@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
     const [formData, setFormData] = useState({
@@ -8,6 +9,8 @@ const Login = () => {
     });
     const [loginResult, setLoginResult] = useState('');
 
+    const navigate = useNavigate();
+
     const { username, password } = formData;
 
     const onChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -15,12 +18,22 @@ const Login = () => {
     const onSubmit = async e => {
         e.preventDefault();
 
+        setLoginResult('Processing login...')
+        
+        //disable login button
+        e.target.querySelector('button').disabled = true;
+
         const data = {
             username,
             password
         };
-        const res = await axios.post('/auth/login', data);
-        setLoginResult(res.data.message);
+        const response = await axios.post('/auth/login', data);
+        if (response.data.status === 'success') {
+            navigate('/home');
+        } else {
+            setLoginResult('Login failed: ' + response.data.message || 'An error occurred');
+            e.target.querySelector('button').disabled = false;
+        }
     };
 
     return (

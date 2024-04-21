@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const Profile = () => {
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [passwordChangeMessage, setPasswordChangeMessage] = useState('');
+
+    const navigate = useNavigate();
 
     const handleChangePassword = async e => {
         e.preventDefault();
@@ -38,6 +41,7 @@ const Profile = () => {
 
     return (
         <div>
+            <button onClick={() => navigate('/home')}>Back to Home</button>
             <h2>Change Password</h2>
             <form onSubmit={handleChangePassword}>
                 <label>
