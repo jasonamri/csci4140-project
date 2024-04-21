@@ -10,13 +10,15 @@ class Playlists {
         return {
             status: 'success',
             message: 'Playlist created',
-            data: res.rows[0]
+            data: {
+                playlist: res.rows[0]
+            }
         }
     }
 
     static async get(username, pl_id) {
         const query = {
-            text: 'SELECT * FROM playlists WHERE owner = $1 AND id = $2',
+            text: 'SELECT * FROM playlists WHERE owner = $1 AND pl_id = $2',
             values: [username, pl_id]
         };
         const res = await Database.query(query);
@@ -28,7 +30,9 @@ class Playlists {
         }
         return {
             status: 'success',
-            data: res.rows[0]
+            data: {
+                playlist: res.rows[0]
+            }
         }
     }
 
@@ -40,13 +44,15 @@ class Playlists {
         const res = await Database.query(query);
         return {
             status: 'success',
-            data: res.rows
+            data: {
+                playlists: res.rows
+            }
         }
     }
 
     static async getSongs(username, pl_id) {
         const query = {
-            text: 'SELECT songs FROM playlists WHERE owner = $1 AND id = $2',
+            text: 'SELECT songs FROM playlists WHERE owner = $1 AND pl_id = $2',
             values: [username, pl_id]
         };
         const res = await Database.query(query);
@@ -64,7 +70,9 @@ class Playlists {
         });
         return {
             status: 'success',
-            data: songs.rows
+            data: {
+                songs: songs.rows
+            }
         }
     }
 
@@ -96,12 +104,11 @@ class Playlists {
     }
 
     static async addSong(username, pl_id, song_id) {
-        // get link statuses
-        const query = {
-            text: 'SELECT spotify_status, youtube_status FROM playlists WHERE owner = $1 AND id = $2',
-            values: [username, pl_id]
-        };
-        const res = await Database.query(query);
+        // add song to playlist
+        const res = await Database.query({
+            text: 'UPDATE playlists SET songs = array_append(songs, $1) WHERE owner = $2 AND pl_id = $3 RETURNING *',
+            values: [song_id, username, pl_id]
+        });
         if (res.rows.length === 0) {
             return {
                 status: 'fail',
@@ -109,24 +116,18 @@ class Playlists {
             }
         }
 
-        // add song to playlist
-        await Database.query({
-            text: 'UPDATE playlists SET songs = array_append(songs, $1) WHERE owner = $2 AND id = $3 RETURNING *',
-            values: [song_id, username, pl_id]
-        });
-
         // change from LINKED to LINKED_MODIFIED
         const spotify_status = res.rows[0].spotify_status;
         const youtube_status = res.rows[0].youtube_status;
         if (spotify_status === 'LINKED') {
             await Database.query({
-                text: 'UPDATE playlists SET spotify_status = \'LINKED_MODIFIED\' WHERE owner = $1 AND id = $2',
+                text: 'UPDATE playlists SET spotify_status = \'LINKED_MODIFIED\' WHERE owner = $1 AND pl_id = $2',
                 values: [username, pl_id]
             });
         }
         if (youtube_status === 'LINKED') {
             await Database.query({
-                text: 'UPDATE playlists SET youtube_status = \'LINKED_MODIFIED\' WHERE owner = $1 AND id = $2',
+                text: 'UPDATE playlists SET youtube_status = \'LINKED_MODIFIED\' WHERE owner = $1 AND pl_id = $2',
                 values: [username, pl_id]
             });
         }
@@ -138,15 +139,15 @@ class Playlists {
     }
 
     static async removeSong(username, pl_id, song_id) {
-        const query = {
-            text: 'UPDATE playlists SET songs = array_remove(songs, $1) WHERE owner = $2 AND id = $3 RETURNING *',
+        // remove song from playlist
+        const res = await Database.query({
+            text: 'UPDATE playlists SET songs = array_remove(songs, $1) WHERE owner = $2 AND pl_id = $3 RETURNING *',
             values: [song_id, username, pl_id]
-        };
-        const res = await Database.query(query);
+        });
         if (res.rows.length === 0) {
             return {
                 status: 'fail',
-                message: 'Song not found in playlist'
+                message: 'Playlist not found or song not in playlist'
             }
         }
 
@@ -155,13 +156,13 @@ class Playlists {
         const youtube_status = res.rows[0].youtube_status;
         if (spotify_status === 'LINKED') {
             await Database.query({
-                text: 'UPDATE playlists SET spotify_status = \'LINKED_MODIFIED\' WHERE owner = $1 AND id = $2',
+                text: 'UPDATE playlists SET spotify_status = \'LINKED_MODIFIED\' WHERE owner = $1 AND pl_id = $2',
                 values: [username, pl_id]
             });
         }
         if (youtube_status === 'LINKED') {
             await Database.query({
-                text: 'UPDATE playlists SET youtube_status = \'LINKED_MODIFIED\' WHERE owner = $1 AND id = $2',
+                text: 'UPDATE playlists SET youtube_status = \'LINKED_MODIFIED\' WHERE owner = $1 AND pl_id = $2',
                 values: [username, pl_id]
             });
         }

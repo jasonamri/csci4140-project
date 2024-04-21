@@ -52,7 +52,7 @@ app.use('/api/', indexRouter);
 app.use('/api/spotify', spotifyRouter);
 app.use('/api/youtube', youtubeRouter);
 app.use('/api/auth', authRouter);
-app.use('/api/playlist', playlistRouter);
+app.use('/api/pl', playlistRouter);
 app.use('/api/song', songRouter);
 
 // launch express

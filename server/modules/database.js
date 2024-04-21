@@ -41,7 +41,10 @@ class Database {
       await this.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";');
 
       // DEBUG: Drop all tables
-      // await this.query('DROP TABLE IF EXISTS users, sessions, playlists, songs;');
+      // await this.query('DROP TABLE IF EXISTS users;');
+      // await this.query('DROP TABLE IF EXISTS playlists;');
+      // await this.query('DROP TABLE IF EXISTS songs;');
+      // await this.query('DROP TABLE IF EXISTS sessions;');
 
       // Create Sessions table
       const sessionsTable = `CREATE TABLE IF NOT EXISTS sessions (
@@ -75,35 +78,72 @@ class Database {
 
       // Create Playlists table
       const playlistsTable = `CREATE TABLE IF NOT EXISTS playlists (
-        pl_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        name VARCHAR(255) NOT NULL,
-        owner VARCHAR(255) REFERENCES Users(username) ON DELETE CASCADE,
-        privacy VARCHAR(50) CHECK (privacy IN ('PRIVATE', 'SHARED')),
-        songs UUID[] NOT NULL,
-        ordered_songs_id UUID[] NOT NULL,
-        spotify_status VARCHAR(50) CHECK (spotify_status IN ('LINKED', 'LINKED_MODIFIED', 'NOT_LINKED')),
-        spotify_ref TEXT,
-        youtube_status VARCHAR(50) CHECK (youtube_status IN ('LINKED', 'LINKED_MODIFIED', 'NOT_LINKED')),
-        youtube_ref TEXT,
-        creation_type VARCHAR(50) CHECK (creation_type IN ('IMPORT', 'ACTION', 'BLANK', 'GENERATED')),
-        date_created TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        date_last_modified TIMESTAMP WITH TIME ZONE
-    );`;
+          pl_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+          name VARCHAR(255) NOT NULL,
+          owner VARCHAR(255) REFERENCES Users(username) ON DELETE CASCADE,
+          privacy VARCHAR(50) DEFAULT 'PRIVATE' CHECK (privacy IN ('PRIVATE', 'SHARED')),
+          songs UUID[] NOT NULL,
+          spotify_status VARCHAR(50) DEFAULT 'NOT_LINKED' CHECK (spotify_status IN ('LINKED', 'LINKED_MODIFIED', 'NOT_LINKED')),
+          spotify_ref TEXT,
+          youtube_status VARCHAR(50) DEFAULT 'NOT_LINKED' CHECK (youtube_status IN ('LINKED', 'LINKED_MODIFIED', 'NOT_LINKED')),
+          youtube_ref TEXT,
+          creation_type VARCHAR(50) CHECK (creation_type IN ('IMPORT', 'ACTION', 'BLANK', 'GENERATED')),
+          date_created TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          date_last_modified TIMESTAMP WITH TIME ZONE
+      );`;
       await this.query(playlistsTable);
 
       // Create Songs table
       const songsTable = `CREATE TABLE IF NOT EXISTS songs (
-        song_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        title VARCHAR(255) NOT NULL,
-        artist VARCHAR(255),
-        album VARCHAR(255),
-        duration INT NOT NULL,
-        spotify_status VARCHAR(50) CHECK (spotify_status IN ('HARD_MATCH', 'SOFT_MATCH', 'NOT_FOUND')),
-        spotify_ref TEXT,
-        youtube_status VARCHAR(50) CHECK (youtube_status IN ('HARD_MATCH', 'SOFT_MATCH', 'NOT_FOUND')),
-        youtube_ref TEXT
-    );`;
+          song_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+          title VARCHAR(255) NOT NULL,
+          artist VARCHAR(255),
+          album VARCHAR(255),
+          spotify_status VARCHAR(50) DEFAULT 'NOT_FOUND' CHECK (spotify_status IN ('HARD_MATCH', 'SOFT_MATCH', 'NOT_FOUND')),
+          spotify_ref TEXT,
+          youtube_status VARCHAR(50) DEFAULT 'NOT_FOUND' CHECK (youtube_status IN ('HARD_MATCH', 'SOFT_MATCH', 'NOT_FOUND')),
+          youtube_ref TEXT,
+          search_vector TSVECTOR
+      );`;
       await this.query(songsTable);
+
+      // Create trigger function for updating search vector
+      const updateSearchVectorFunction = `
+      CREATE OR REPLACE FUNCTION update_songs_search_vector() RETURNS TRIGGER AS $$
+      BEGIN
+        NEW.search_vector :=
+            to_tsvector('english', COALESCE(NEW.title, '') || ' ' ||
+                                    COALESCE(NEW.artist, '') || ' ' ||
+                                    COALESCE(NEW.album, ''));
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+      `;
+      await this.query(updateSearchVectorFunction);
+
+      // Create trigger to update search vector on insert or update
+      const updateSearchVectorTrigger = `
+      DO $$
+      BEGIN
+          -- Check if the trigger already exists
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_trigger
+              WHERE tgname = 'songs_search_vector_update'
+          ) THEN
+              -- Create the trigger if it does not exist
+              EXECUTE 'CREATE TRIGGER songs_search_vector_update
+                      BEFORE INSERT OR UPDATE OF title, artist, album ON songs
+                      FOR EACH ROW EXECUTE FUNCTION update_songs_search_vector();';
+          END IF;
+      END;
+      $$;
+      `;
+      await this.query(updateSearchVectorTrigger);
+
+      // Create index on search vector column for full text search
+      const createSearchVectorIndex = `CREATE INDEX IF NOT EXISTS idx_songs_search_vector ON songs USING GIN(search_vector);`;
+      await this.query(createSearchVectorIndex);
 
       // Validate tables created
       const res = await this.query('SELECT table_name FROM information_schema.tables WHERE table_schema = \'public\';');

@@ -23,20 +23,37 @@ const scopes = [
     'user-read-playback-position'
 ];
 
+// Helper functions
+function trackToSong(track) {
+    return {
+        spotify_ref: track.id,
+        title: track.name,
+        artist: track.artists[0].name,
+        album: track.album.name,
+        //duration: track.duration_ms,
+        image: track.album.images[0].url
+    }
+}
+
 class Spotify {
-    constructor() {
-        this.spotifyApi = new SpotifyWebApi({
-            clientId: process.env.SPOTIFY_CLIENT_ID,
-            clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-            redirectUri: 'http://localhost:3000/callback-spotify'
-        });
+
+    static spotifyApi = new SpotifyWebApi({
+        clientId: process.env.SPOTIFY_CLIENT_ID,
+        clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+        redirectUri: 'http://localhost:3000/callback-spotify'
+    });
+
+
+    static api(access_token) {
+        this.spotifyApi.setAccessToken(access_token);
+        return this.spotifyApi;
     }
 
-    getAuthorizeURL() {
+    static getAuthorizeURL() {
         return this.spotifyApi.createAuthorizeURL(scopes);
     }
 
-    async link(username, code) {
+    static async link(username, code) {
         const data = await this.spotifyApi.authorizationCodeGrant(code);
         const { access_token, refresh_token, expires_in } = data.body;
         const token_expiry = new Date(Date.now() + expires_in * 1000).toISOString();
@@ -56,7 +73,7 @@ class Spotify {
         }
     }
 
-    async unlink(username) {
+    static async unlink(username) {
         // clear tokens from database
         const query = `UPDATE users SET spotify_access_token = NULL, spotify_refresh_token = NULL, spotify_token_expires = NULL, spotify_status = 'UNLINKED' WHERE username = '${username}'`;
         await Database.query(query);
@@ -67,7 +84,7 @@ class Spotify {
         }
     }
 
-    async refreshAccessToken(username, refresh_token) {
+    static async refreshAccessToken(username, refresh_token) {
         this.spotifyApi.setRefreshToken(refresh_token);
         const data = await this.spotifyApi.refreshAccessToken();
         const { access_token, expires_in } = data.body;
@@ -87,29 +104,31 @@ class Spotify {
         }
     }
 
-
-    async getPlaylists(access_token) {
-        this.spotifyApi.setAccessToken(access_token);
-        const data = await this.spotifyApi.getUserPlaylists();
+    static async getPlaylists(access_token) {
+        const data = await this.api(access_token).getUserPlaylists();
         return data.body.items;
     }
 
-    async search(access_token, query, count) {
-        this.spotifyApi.setAccessToken(access_token);
-        const results = await this.spotifyApi.searchTracks(query, { limit: count });
-        
-        const tracks = results.body.tracks.items.map(track => {
-            return {
-                id: track.id,
-                name: track.name,
-                artist: track.artists[0].name,
-                album: track.album.name,
-                image: track.album.images[0].url,
-                duration: track.duration_ms
-            }
-        });
+    static async getSong(access_token, spotify_ref) {
+        const track = await this.api(access_token).getTrack(spotify_ref);
+        const song = trackToSong(track.body);
+        return song;
+    }
 
-        return tracks;
+    static async search(access_token, search_query, count) {
+        const results = await this.api(access_token).searchTracks(search_query, { limit: count });
+        const tracks = results.body.tracks.items
+        const songs = tracks.map(trackToSong);
+
+        // filter out songs already in database
+        const query = {
+            text: 'SELECT * FROM songs WHERE spotify_ref = ANY($1)',
+            values: [songs.map(song => song.spotify_ref)]
+        };
+        const res = await Database.query(query);
+        const spotify_refs = res.rows.map(row => row.spotify_ref);
+
+        return songs.filter(song => !spotify_refs.includes(song.spotify_ref));
     }
 
 }

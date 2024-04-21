@@ -1,19 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const SpotifyWrapper = require('../modules/spotify');
+const Spotify = require('../modules/spotify');
 const { ensureLoggedIn } = require('../modules/middleware');
-
-const Spotify = new SpotifyWrapper();
-
 
 // token refresh middleware
 const ensureValidToken = async (req, res, next) => {
     const refresh_token = req.session.spotify_refresh_token;
     const token_expiry = new Date(req.session.spotify_token_expires).getTime();
 
-    console.log('token_expiry', token_expiry, Date.now());
-
     if (token_expiry < Date.now()) {
+        console.log('Refreshing Spotify token');
         const result = await Spotify.refreshAccessToken(req.session.username, refresh_token);
         req.session.spotify_access_token = result.data.access_token;
         req.session.spotify_token_expires = result.data.token_expiry;
@@ -87,12 +83,12 @@ router.get('/get-all-pls', ensureLoggedIn, ensureValidToken, async (req, res) =>
 router.post('/search', ensureLoggedIn, ensureValidToken, async (req, res) => {
     const access_token = req.session.spotify_access_token;
     const { query, count } = req.body;
-    const tracks = await Spotify.search(access_token, query, count);
+    const songs = await Spotify.search(access_token, query, count);
 
     const result = {
         status: 'success',
         data: {
-            results: tracks
+            results: songs
         }
     }
 

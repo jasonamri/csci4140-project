@@ -9,4 +9,16 @@ router.get('/get/:song_id', ensureLoggedIn, async (req, res) => {
     res.json(result);
 });
 
+router.post('/create', ensureLoggedIn, async (req, res) => {
+    const { platform, song } = req.body;
+    const result = await Songs.create(platform, song);
+    res.json(result);
+});
+
+router.post('/search', ensureLoggedIn, async (req, res) => {
+    const { query, count } = req.body;
+    const result = await Songs.search(query, count);
+    res.json(result);
+});
+
 module.exports = router;

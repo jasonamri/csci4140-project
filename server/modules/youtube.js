@@ -11,23 +11,38 @@ const scopes = [
     'https://www.googleapis.com/auth/youtube.readonly',
 ];
 
+// Helper functions
+function videoToSong(video) {
+    return {
+        youtube_ref: video.id.videoId,
+        title: video.snippet.title,
+        artist: video.snippet.channelTitle,
+        album: "",
+        image: video.snippet.thumbnails.default.url
+    }
+}
+
 class Youtube {
-    constructor() {
-        this.oauth2Client = new google.auth.OAuth2(
-            process.env.YOUTUBE_CLIENT_ID,
-            process.env.YOUTUBE_CLIENT_SECRET,
-            'http://localhost:3000/callback-youtube'
-        );
+    static oauth2Client = new google.auth.OAuth2(
+        process.env.YOUTUBE_CLIENT_ID,
+        process.env.YOUTUBE_CLIENT_SECRET,
+        'http://localhost:3000/callback-youtube'
+    );
+
+
+    static api(access_token) {
+        this.oauth2Client.setCredentials({ access_token });
+        return google.youtube({ version: 'v3', auth: this.oauth2Client });
     }
 
-    getAuthorizeURL() {
+    static getAuthorizeURL() {
         return this.oauth2Client.generateAuthUrl({
             access_type: 'offline',
             scope: scopes,
         });
     }
 
-    async link(username, code) {
+    static async link(username, code) {
         const { tokens } = await this.oauth2Client.getToken(code);
         const { access_token, refresh_token, expiry_date } = tokens;
         const token_expiry = new Date(expiry_date).toISOString();
@@ -47,7 +62,7 @@ class Youtube {
         }
     }
 
-    async unlink(username) {
+    static async unlink(username) {
         // clear tokens from database
         const query = `UPDATE users SET youtube_access_token = NULL, youtube_refresh_token = NULL, youtube_token_expires = NULL, youtube_status = 'UNLINKED' WHERE username = '${username}'`;
         await Database.query(query);
@@ -58,7 +73,7 @@ class Youtube {
         }
     }
 
-    async refreshAccessToken(username, refresh_token) {
+    static async refreshAccessToken(username, refresh_token) {
         this.oauth2Client.setCredentials({ refresh_token });
         const result = await this.oauth2Client.refreshAccessToken();
         const { access_token, expiry_date } = result.credentials;
@@ -78,38 +93,31 @@ class Youtube {
         }
     }
 
-    async getPlaylists(access_token) {
-        this.oauth2Client.setCredentials({ access_token });
-        const youtube = google.youtube({ version: 'v3', auth: this.oauth2Client });
-
-        const response = await youtube.playlists.list({
-            part: 'snippet',
-            mine: true
-        });
-
+    static async getPlaylists(access_token) {
+        const response = await this.api(access_token).playlists.list({ part: 'snippet', mine: true });
         return response.data.items;
     }
 
-    async search(access_token, query, count) {
-        this.oauth2Client.setCredentials({ access_token });
-        const youtube = google.youtube({ version: 'v3', auth: this.oauth2Client });
+    static async getSong(access_token, youtube_ref) {
+        const video = await this.api(access_token).videos.list({ part: 'snippet', id: youtube_ref });
+        const song = videoToSong(video.data.items[0]);
+        return song;
+    }
 
-        const response = await youtube.search.list({
-            part: 'snippet',
-            q: query,
-            maxResults: count
-        });
+    static async search(access_token, search_query, count) {
+        const results = await this.api(access_token).search.list({ part: 'snippet', q: search_query, maxResults: count });
+        const videos = results.data.items
+        const songs = videos.map(videoToSong);
 
-        const videos = response.data.items.map(item => {
-            return {
-                id: item.id.videoId,
-                name: item.snippet.title,
-                artist: item.snippet.channelTitle,
-                image: item.snippet.thumbnails.default.url
-            }
-        });
+        // filter out songs already in database
+        const query = {
+            text: 'SELECT * FROM songs WHERE youtube_ref = ANY($1)',
+            values: [songs.map(song => song.youtube_ref)]
+        };
+        const res = await Database.query(query);
+        const youtube_refs = res.rows.map(row => row.youtube_ref);
 
-        return videos;
+        return songs.filter(song => !youtube_refs.includes(song.youtube_ref));
     }
 
 }

@@ -1,9 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const YoutubeWrapper = require('../modules/youtube');
+const Youtube = require('../modules/youtube');
 const { ensureLoggedIn } = require('../modules/middleware');
-
-const Youtube = new YoutubeWrapper();
 
 
 // token refresh middleware
@@ -12,6 +10,7 @@ const ensureValidToken = async (req, res, next) => {
     const token_expiry = new Date(req.session.youtube_token_expires).getTime();
 
     if (token_expiry < Date.now()) {
+        console.log('Refreshing Youtube token');
         const result = await Youtube.refreshAccessToken(req.session.username, refresh_token);
         req.session.youtube_access_token = result.data.access_token;
         req.session.youtube_token_expires = result.data.token_expiry;
@@ -87,12 +86,13 @@ router.get('/get-all-pls', ensureLoggedIn, async (req, res) => {
 router.post('/search', ensureLoggedIn, ensureValidToken, async (req, res) => {
     const access_token = req.session.youtube_access_token;
     const { query, count } = req.body;
-    const tracks = await Youtube.search(access_token, query, count);
+    //const songs = await Youtube.search(access_token, query, count);
+    const songs = [];
 
     const result = {
         status: 'success',
         data: {
-            results: tracks
+            results: songs
         }
     }
 

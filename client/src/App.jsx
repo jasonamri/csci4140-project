@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 // pages
 import Landing from './components/Landing';
-import Home from './components/Landing';
+import Home from './components/Home';
 import Playlist from './components/Playlist';
 import Import from './components/Import';
 import Share from './components/Share';
