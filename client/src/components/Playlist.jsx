@@ -6,10 +6,14 @@ function Playlist() {
     const [playlist, setPlaylist] = useState({});
     const [songs, setSongs] = useState([]);
     const [songResults, setSongResults] = useState({});
+    const [songResults2, setSongResults2] = useState({});
     const [showModal, setShowModal] = useState(false);
+    const [showModal2, setShowModal2] = useState(false);
     const [showPopup, setShowPopup] = useState("none");
     const [popupSong1, setPopupSong1] = useState({});
     const [popupSong2, setPopupSong2] = useState({});
+    const [platform, setPlatform] = useState('');
+    const [songId, setSongId] = useState('');
     const navigate = useNavigate();
 
     const pl_id = new URLSearchParams(window.location.search).get('pl_id');
@@ -73,6 +77,42 @@ function Playlist() {
             results.youtube = response.data.data.youtube;
 
             setSongResults(results);
+        } catch (error) {
+            if (axios.isCancel(error)) {
+                console.log("Previous search request cancelled:", error.message);
+            } else {
+                console.error("Error occurred during search:", error);
+            }
+        }
+    };
+
+    let cancelTokenSource2 = null;
+    const search2 = async () => {
+        const query = document.querySelector('input').value;
+
+        if (query.length < 3) {
+            setSongResults2({});
+            // Cancel the previous request if it exists
+            if (cancelTokenSource2) {
+                cancelTokenSource2.cancel("Search input is too short");
+            }
+            return;
+        }
+
+        // Cancel the previous request if it exists
+        if (cancelTokenSource2) {
+            cancelTokenSource2.cancel("New search input received");
+        }
+
+        // Create a new cancel token source
+        cancelTokenSource2 = axios.CancelToken.source();
+
+        const results = {};
+
+        try {
+            const response = await axios.post('/'+platform+'/search', { query: query, count: 5 }, { cancelToken: cancelTokenSource2.token });
+            results.results = response.data.data.results;
+            setSongResults2(results);
         } catch (error) {
             if (axios.isCancel(error)) {
                 console.log("Previous search request cancelled:", error.message);
@@ -175,6 +215,7 @@ function Playlist() {
             fetchSongs();
         } else {
             alert('Error adding song: ' + response.data.message || 'An error occurred');
+            fetchSongs();
         }
     }
 
@@ -188,10 +229,29 @@ function Playlist() {
         }
     }
 
+    const linkSong = async (song_id, platform, platform_ref) => {
+        setShowModal2(!showModal2);
+        const response = await axios.post('/song/link', { song_id: song_id, platform: platform, platform_ref: platform_ref });
+        if (response.data.status === 'success') {
+            alert(response.data.message);
+            fetchSongs();
+        } else {
+            alert('Error linking song: ' + response.data.message || 'An error occurred');
+        }
+    }
+
+
     // Toggle the new playlist modal
     const toggleModal = () => {
         setShowModal(!showModal);
     };
+
+    // Toggle the link modal
+    const toggleModal2 = (song_id, platform) => {
+        setPlatform(platform);
+        setSongId(song_id);
+        setShowModal2(!showModal2);
+    }
 
     return (
         <div>
@@ -204,11 +264,9 @@ function Playlist() {
             {showModal && (
                 <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
                     <h2>Add a song</h2>
-                    <input type="text" onChange={search} placeholder="Search for a song" /><br />
-                    { /*results table*/}
+                    <input type="text" placeholder="Search for a song" /><br />
+                    <button onClick={search}>Search</button><br />
                     <br />
-
-
                     <h4>Local Results</h4>
                     <table border="1">
                         <thead>
@@ -281,6 +339,40 @@ function Playlist() {
                 </div>
             )}
 
+            {showModal2 && (
+                <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
+                    <h2>Link a song</h2>
+                    <input type="text" placeholder="Search for a song" /><br />
+                    <button onClick={search2}>Search</button><br />
+                    <br />
+                    <h4>Search Results</h4>
+                    <table border="1">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Artist</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {songResults2.results && songResults2.results.map(song => (
+                                <tr key={song.youtube_ref || song.spotify_ref}>
+                                    <td>{song.title}</td>
+                                    <td>{song.artist}</td>
+                                    <td>
+                                        <button onClick={() => linkSong(songId, platform, song.youtube_ref || song.spotify_ref)}>Link</button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+
+                    <br />
+
+                    <button onClick={toggleModal}>Close</button>
+                </div>   
+            )}
+
 
             <div style={{ display: showPopup, position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
                 <h2>Merge Songs?</h2>
@@ -320,8 +412,8 @@ function Playlist() {
                             <tr key={song.song_id}>
                                 <td>{song.title}</td>
                                 <td>{song.artist}</td>
-                                <td>{song.spotify_status}</td>
-                                <td>{song.youtube_status}</td>
+                                <td>{song.spotify_status === "HARD_MATCH" ? song.spotify_status : <button onClick={() => toggleModal2(song.song_id, 'spotify')}>{song.spotify_status}</button>}</td>
+                                <td>{song.youtube_status === "HARD_MATCH" ? song.youtube_status : <button onClick={() => toggleModal2(song.song_id, 'youtube')}>{song.youtube_status}</button>}</td>
                                 <td>
                                     <button onClick={() => removeSong(song.song_id)}>Remove</button>
                                 </td>

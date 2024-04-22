@@ -40,4 +40,11 @@ router.post('/merge', ensureLoggedIn, async (req, res) => {
     res.json(result);
 });
 
+router.post('/link', ensureLoggedIn, ensureValidSpotifyToken, async (req, res) => {
+    const spotify_access_token = req.session.spotify_access_token;
+    const { song_id, platform, platform_ref } = req.body;
+    const result = await Songs.link(spotify_access_token, song_id, platform, platform_ref);
+    res.json(result);
+});
+
 module.exports = router;

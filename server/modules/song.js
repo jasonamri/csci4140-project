@@ -313,6 +313,58 @@ class Songs {
             }
         }
     }
+
+    static async link(spotify_access_token, song_id, platform, platform_ref) {
+        const hard_match = (platform, platform_ref) => {
+            const query = {
+                text: 'SELECT * FROM songs WHERE ' + platform + '_status = \'HARD_MATCH\' AND ' + platform + '_ref = $1',
+                values: [platform_ref]
+            };
+            return Database.query(query);
+        }
+
+        // check for hard match, if so, need to merge
+        const matchRes = await hard_match(platform, platform_ref);
+        if (matchRes.rows.length > 0) {
+            const song_1_id = song_id;
+            const song_2_id = matchRes.rows[0].song_id;
+            return await this.merge(song_1_id, song_2_id);
+        }
+
+        // otherwise, can just link
+        let song = null;
+        const query = {
+            text: 'UPDATE songs SET ' + platform + '_status = \'HARD_MATCH\', ' + platform + '_ref = $1 WHERE song_id = $2 RETURNING *',
+            values: [platform_ref, song_id]
+        };
+        const linkRes = await Database.query(query);
+        if (linkRes.rows.length === 0) {
+            return {
+                status: 'fail',
+                message: 'Song not found'
+            }
+        }
+        song = linkRes.rows[0];
+
+        // if linking to spotify, update song parameters
+        if (platform === 'spotify') {
+            song = await Spotify.getSong(spotify_access_token, platform_ref);
+            const updateQuery = {
+                text: 'UPDATE songs SET title = $1, artist = $2, album = $3 WHERE song_id = $4 RETURNING *',
+                values: [song.title, song.artist, song.album, song_id]
+            };
+            const updateRes = await Database.query(updateQuery);
+            song = updateRes.rows[0];
+        }
+
+        return {
+            status: 'success',
+            message: 'Song linked successfully',
+            data: {
+                song: song
+            }
+        }
+    }
 }
 
 module.exports = Songs;
