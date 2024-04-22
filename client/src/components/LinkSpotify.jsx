@@ -28,7 +28,7 @@ const LinkSpotify = () => {
 
   const handleUnlinkSpotify = async () => {
     try {
-      await axios.post('/spotify/unlink');
+      await axios.get('/spotify/unlink');
       setSpotifyStatus('UNLINKED');
     } catch (error) {
       console.error('Error unlinking Spotify:', error);

@@ -121,6 +121,7 @@ class Spotify {
         const songs = tracks.map(trackToSong);
 
         // filter out songs already in database
+        /*
         const query = {
             text: 'SELECT * FROM songs WHERE spotify_ref = ANY($1)',
             values: [songs.map(song => song.spotify_ref)]
@@ -129,6 +130,8 @@ class Spotify {
         const spotify_refs = res.rows.map(row => row.spotify_ref);
 
         return songs.filter(song => !spotify_refs.includes(song.spotify_ref));
+        */
+        return songs;
     }
 
 }

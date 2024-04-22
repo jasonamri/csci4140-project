@@ -65,6 +65,7 @@ router.get('/get-all-pls', ensureLoggedIn, ensureValidSpotifyToken, async (req, 
     res.json(result);
 });
 
+/*
 router.post('/search', ensureLoggedIn, ensureValidSpotifyToken, async (req, res) => {
     const access_token = req.session.spotify_access_token;
     const { query, count } = req.body;
@@ -79,5 +80,6 @@ router.post('/search', ensureLoggedIn, ensureValidSpotifyToken, async (req, res)
 
     res.json(result);
 });
+*/
 
 module.exports = router;

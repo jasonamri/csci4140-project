@@ -39,7 +39,7 @@ router.get('/callback', ensureLoggedIn, async (req, res) => {
     res.json(result);
 });
 
-router.post('/unlink', ensureLoggedIn, async (req, res) => {
+router.get('/unlink', ensureLoggedIn, async (req, res) => {
     const result = await Youtube.unlink(req.session.username);
 
     // remove tokens from session
@@ -65,6 +65,7 @@ router.get('/get-all-pls', ensureLoggedIn, ensureValidYoutubeToken, async (req, 
     res.json(result);
 });
 
+/*
 router.post('/search', ensureLoggedIn, ensureValidYoutubeToken, async (req, res) => {
     const access_token = req.session.youtube_access_token;
     const { query, count } = req.body;
@@ -80,5 +81,6 @@ router.post('/search', ensureLoggedIn, ensureValidYoutubeToken, async (req, res)
 
     res.json(result);
 });
+*/
 
 module.exports = router;

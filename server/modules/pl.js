@@ -104,12 +104,25 @@ class Playlists {
     }
 
     static async addSong(username, pl_id, song_id) {
+        // check if song is already in playlist
+        const query = {
+            text: 'SELECT * FROM playlists WHERE owner = $1 AND pl_id = $2 AND $3 = ANY(songs)',
+            values: [username, pl_id, song_id]
+        };
+        const res = await Database.query(query);
+        if (res.rows.length > 0) {
+            return {
+                status: 'fail',
+                message: 'Song already in playlist'
+            }
+        }
+
         // add song to playlist
-        const res = await Database.query({
+        const res2 = await Database.query({
             text: 'UPDATE playlists SET songs = array_append(songs, $1) WHERE owner = $2 AND pl_id = $3 RETURNING *',
             values: [song_id, username, pl_id]
         });
-        if (res.rows.length === 0) {
+        if (res2.rows.length === 0) {
             return {
                 status: 'fail',
                 message: 'Playlist not found'
@@ -117,8 +130,8 @@ class Playlists {
         }
 
         // change from LINKED to LINKED_MODIFIED
-        const spotify_status = res.rows[0].spotify_status;
-        const youtube_status = res.rows[0].youtube_status;
+        const spotify_status = res2.rows[0].spotify_status;
+        const youtube_status = res2.rows[0].youtube_status;
         if (spotify_status === 'LINKED') {
             await Database.query({
                 text: 'UPDATE playlists SET spotify_status = \'LINKED_MODIFIED\' WHERE owner = $1 AND pl_id = $2',

@@ -28,7 +28,7 @@ const LinkYoutube = () => {
 
   const handleUnlinkYoutube = async () => {
     try {
-      await axios.post('/youtube/unlink');
+      await axios.get('/youtube/unlink');
       setYoutubeStatus('UNLINKED');
     } catch (error) {
       console.error('Error unlinking Youtube:', error);

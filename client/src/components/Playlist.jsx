@@ -7,20 +7,22 @@ function Playlist() {
     const [songs, setSongs] = useState([]);
     const [songResults, setSongResults] = useState({});
     const [showModal, setShowModal] = useState(false);
+    const [showPopup, setShowPopup] = useState("none");
+    const [popupSong1, setPopupSong1] = useState({});
+    const [popupSong2, setPopupSong2] = useState({});
     const navigate = useNavigate();
 
     const pl_id = new URLSearchParams(window.location.search).get('pl_id');
 
     const fetchPlaylist = async () => {
-        const response = await axios.get('/pl/get/'+pl_id);
+        const response = await axios.get('/pl/get/' + pl_id);
         const playlist = response.data.data.playlist;
         setPlaylist(playlist);
     }
 
     const fetchSongs = async () => {
-        const response = await axios.get('/pl/get-songs/'+pl_id);
+        const response = await axios.get('/pl/get-songs/' + pl_id);
         const songs = response.data.data.songs;
-        console.log(songs);
         setSongs(songs);
     }
 
@@ -41,7 +43,6 @@ function Playlist() {
     };
 
     let cancelTokenSource = null;
-
     const search = async () => {
         const query = document.querySelector('input').value;
 
@@ -65,28 +66,12 @@ function Playlist() {
         const results = {};
 
         try {
-            // Send all requests in parallel
-            const [responseLocal, responseSpotify, responseYoutube] = await Promise.all([
-                axios.post('/song/search', { query: query, count: 5 }, { cancelToken: cancelTokenSource.token }),
-                axios.post('/spotify/search', { query: query, count: 5 }, { cancelToken: cancelTokenSource.token }),
-                axios.post('/youtube/search', { query: query, count: 5 }, { cancelToken: cancelTokenSource.token })
-            ]);
+            const response = await axios.post('/song/search', { query: query, count: 5 }, { cancelToken: cancelTokenSource.token });
 
-            // Process local results
-            if (responseLocal.data.status === 'success') {
-                results.local = responseLocal.data.data.results;
-            }
+            results.local = response.data.data.local;
+            results.spotify = response.data.data.spotify;
+            results.youtube = response.data.data.youtube;
 
-            // Process Spotify results
-            if (responseSpotify.data.status === 'success') {
-                results.spotify = responseSpotify.data.data.results;
-            }
-
-            // Process YouTube results
-            if (responseYoutube.data.status === 'success') {
-                results.youtube = responseYoutube.data.data.results;
-            }
-        
             setSongResults(results);
         } catch (error) {
             if (axios.isCancel(error)) {
@@ -97,26 +82,94 @@ function Playlist() {
         }
     };
 
-    const addSong = async (platform, song) => {
+    const mergeVerification = (song1, song2) => {
+        return new Promise((resolve, reject) => {
+            setShowPopup("block");
+            document.getElementById('popup-yes').addEventListener('click', () => {
+                setShowPopup("none");
+                resolve(true);
+            });
+            document.getElementById('popup-no').addEventListener('click', () => {
+                setShowPopup("none");
+                resolve(false);
+            });
+            setPopupSong1(song1);
+            setPopupSong2(song2);
+        });
+    }
+
+    const addSong = async (platform, platform_ref) => {
         setShowModal(!showModal);
 
         let song_id = null;
 
-        // Create the song in the local DB if it doesn't exist, and get the song_id
-        if (platform !== 'local') {
-            const response = await axios.post('/song/create', { platform: platform, song: song });
-            if (response.data.status === 'success') {
-                song_id = response.data.data.song_id;
-            } else {
-                alert('Error adding song: ' + response.data.message || 'An error occurred');
-                return;
+        // api interface helpers
+        const merge = async (song_1, song_2) => {
+            const mergeResponse = await axios.post('/song/merge', { song_1_id: song_1.song_id, song_2_id: song_2.song_id });
+            if (mergeResponse.data.status !== 'success') {
+                alert('Error merging songs: ' + mergeResponse.data.message || 'An error occurred');
+                return null;
             }
+            return mergeResponse.data.data.song;
+        }
+        const create = async (platform, platform_ref, soft_match_ref = null) => {
+            const createResponse = await axios.post('/song/create', { platform: platform, platform_ref: platform_ref, soft_match_ref: soft_match_ref });
+            if (createResponse.data.status !== 'success') {
+                alert('Error adding song: ' + createResponse.data.message || 'An error occurred');
+                return null;
+            }
+            return createResponse.data.data.song;
+        }
+        const precreate = async (platform, platform_ref) => {
+            const precreateResponse = await axios.post('/song/precreate', { platform: platform, platform_ref: platform_ref });
+
+            alert('Precreate Type: ' + precreateResponse.data.message); // DEBUG
+
+            if (precreateResponse.data.status === 'fail') {
+                alert('Error precreating song: ' + precreateResponse.data.message || 'An error occurred');
+                return null;
+            }
+
+            // no need to create a new song
+            if (precreateResponse.data.status === 'exists') {
+                return precreateResponse.data.data.song;
+            }
+
+            // create a new song
+            const song_1 = await create(platform, platform_ref, precreateResponse.data.data.soft_match_ref);
+
+            // no soft matches found, we're done
+            if (precreateResponse.data.status === 'no_match') {
+                return song_1;
+            }
+
+            // song we've soft matched with
+            const song_2 = precreateResponse.data.data.match;
+
+            // if it's a bilateral match, merge automatically
+            if (precreateResponse.data.status === 'soft_match_bilateral') {
+                return await merge(song_1, song_2);
+            } else if (precreateResponse.data.status === 'soft_match_unilateral') {
+                const mergeResult = await mergeVerification(song_1, song_2);
+                if (mergeResult) {
+                    return await merge(song_1, song_2);
+                } else {
+                    return song_1;
+                }
+            } else {
+                alert('Error precreating song: Unexpected status returned');
+                return null;
+            }
+        }
+
+        if (platform !== 'local') {
+            song_id = (await precreate(platform, platform_ref)).song_id;
         } else {
-            song_id = song.song_id;
+            song_id = platform_ref;
         }
 
         // Add the song to the playlist
-        const response = await axios.get('/pl/add-song/'+pl_id+'/'+song_id);
+        const response = await axios.get('/pl/add-song/' + pl_id + '/' + song_id);
         if (response.data.status === 'success') {
             alert(response.data.message);
             fetchSongs();
@@ -126,7 +179,7 @@ function Playlist() {
     }
 
     const removeSong = async (song_id) => {
-        const response = await axios.get('/pl/remove-song/'+pl_id+'/'+song_id);
+        const response = await axios.get('/pl/remove-song/' + pl_id + '/' + song_id);
         if (response.data.status === 'success') {
             alert(response.data.message);
             fetchSongs();
@@ -152,7 +205,7 @@ function Playlist() {
                 <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
                     <h2>Add a song</h2>
                     <input type="text" onChange={search} placeholder="Search for a song" /><br />
-                    { /*results table*/ }
+                    { /*results table*/}
                     <br />
 
 
@@ -171,7 +224,7 @@ function Playlist() {
                                     <td>{song.title}</td>
                                     <td>{song.artist}</td>
                                     <td>
-                                        <button onClick={() => addSong("local", song)}>Add</button>
+                                        <button onClick={() => addSong("local", song.song_id)}>Add from Local</button>
                                     </td>
                                 </tr>
                             ))}
@@ -193,7 +246,7 @@ function Playlist() {
                                     <td>{song.title}</td>
                                     <td>{song.artist}</td>
                                     <td>
-                                        <button onClick={() => addSong("spotify", song)}>Add from Spotify</button>
+                                        <button onClick={() => addSong("spotify", song.spotify_ref)}>Add from Spotify</button>
                                     </td>
                                 </tr>
                             ))}
@@ -215,7 +268,7 @@ function Playlist() {
                                     <td>{song.title}</td>
                                     <td>{song.artist}</td>
                                     <td>
-                                        <button onClick={() => addSong("youtube", song)}>Add from Youtube</button>
+                                        <button onClick={() => addSong("youtube", song.youtube_ref)}>Add from YouTube</button>
                                     </td>
                                 </tr>
                             ))}
@@ -223,10 +276,25 @@ function Playlist() {
                     </table>
 
                     <br />
-                    
+
                     <button onClick={toggleModal}>Close</button>
                 </div>
             )}
+
+
+            <div style={{ display: showPopup, position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
+                <h2>Merge Songs?</h2>
+                <p>Do you want to merge these songs?</p>
+                <b>Song 1:</b>
+                <p>Title: {popupSong1.title}</p>
+                <p>Artist: {popupSong1.artist}</p>
+                <b>Song 2:</b>
+                <p>Title: {popupSong2.title}</p>
+                <p>Artist: {popupSong2.artist}</p>
+                <button id="popup-yes">Yes</button>
+                <button id="popup-no">No</button>
+            </div>
+
 
             <div style={{ padding: '20px' }}>
                 <div>
@@ -251,12 +319,12 @@ function Playlist() {
                         {songs.map(song => (
                             <tr key={song.song_id}>
                                 <td>{song.title}</td>
-                               <td>{song.artist}</td>
-                                  <td>{song.spotify_status}</td>
-                                  <td>{song.youtube_status}</td>
-                                  <td>
-                                        <button onClick={() => removeSong(song.song_id)}>Remove</button>
-                                  </td>
+                                <td>{song.artist}</td>
+                                <td>{song.spotify_status}</td>
+                                <td>{song.youtube_status}</td>
+                                <td>
+                                    <button onClick={() => removeSong(song.song_id)}>Remove</button>
+                                </td>
                             </tr>
                         ))}
                     </tbody>

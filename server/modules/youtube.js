@@ -110,6 +110,7 @@ class Youtube {
         const songs = videos.map(videoToSong);
 
         // filter out songs already in database
+        /*
         const query = {
             text: 'SELECT * FROM songs WHERE youtube_ref = ANY($1)',
             values: [songs.map(song => song.youtube_ref)]
@@ -118,6 +119,8 @@ class Youtube {
         const youtube_refs = res.rows.map(row => row.youtube_ref);
 
         return songs.filter(song => !youtube_refs.includes(song.youtube_ref));
+        */
+        return songs;
     }
 
 }
