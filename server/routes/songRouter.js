@@ -1,6 +1,6 @@
 const express = require('express');
 const Songs = require('../modules/song');
-const { ensureLoggedIn } = require('../modules/middleware');
+const { ensureLoggedIn, ensureValidSpotifyToken, ensureValidYoutubeToken } = require('../modules/middleware');
 
 const router = express.Router();
 
