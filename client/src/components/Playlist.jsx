@@ -141,8 +141,6 @@ function Playlist() {
     const addSong = async (platform, platform_ref) => {
         setShowModal(!showModal);
 
-        let song_id = null;
-
         // api interface helpers
         const merge = async (song_1, song_2) => {
             const mergeResponse = await axios.post('/song/merge', { song_1_id: song_1.song_id, song_2_id: song_2.song_id });
@@ -202,8 +200,14 @@ function Playlist() {
             }
         }
 
+        // get song id
+        let song_id = null;
         if (platform !== 'local') {
-            song_id = (await precreate(platform, platform_ref)).song_id;
+            const song = await precreate(platform, platform_ref)
+            if (!song) {
+                return;
+            }
+            song_id = song.song_id;
         } else {
             song_id = platform_ref;
         }
