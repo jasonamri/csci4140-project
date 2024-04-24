@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import './styles/Home.css';
+import AppBar from '@mui/material/AppBar';
+import Box from '@mui/material/Box';
+import Toolbar from '@mui/material/Toolbar';
+import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
+import Menu from '@mui/material/Menu';
+import Container from '@mui/material/Container';
+import Avatar from '@mui/material/Avatar';
+import Button from '@mui/material/Button';
+import Tooltip from '@mui/material/Tooltip';
+import MenuItem from '@mui/material/MenuItem';
 
 function Home() {
     const [playlists, setPlaylists] = useState([]);
@@ -56,14 +68,69 @@ function Home() {
         navigate('/playlist?pl_id=' + pl_id);
     }
 
+    const [anchorElUser, setAnchorElUser] = React.useState(null);
+
+    const handleOpenUserMenu = (event) => {
+        setAnchorElUser(event.currentTarget);
+    };
+
+    const handleCloseUserMenu = () => {
+        setAnchorElUser(null);
+    };
+
     return (
         <div>
-            <header style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', backgroundColor: '#f5f5f5' }}>
-                <button onClick={toggleModal}>Create New Playlist</button>
-                <button onClick={() => navigate('/import')}>Import a Playlist</button>
-                <button onClick={() => navigate('/profile')}>Profile</button>
-                <button onClick={handleLogout}>Logout</button>
-            </header>
+            <AppBar position="static">
+                <Container maxWidth="xl">
+                    <Toolbar disableGutters>
+                        <Box sx={{ flexGrow: 1, display: 'flex' }}>
+                        <Button
+                            onClick={toggleModal}
+                            sx={{ my: 2, pr: 5, color: 'white', display: 'block' }}
+                            >
+                            Create New Playlist
+                        </Button>
+                        <Button
+                            onClick={() => navigate('/import')}
+                            sx={{ my: 2, color: 'white', display: 'block' }}
+                            >
+                            Import a Playlist
+                        </Button>
+                        </Box>
+
+                        <Box sx={{ flexGrow: 0 }}>
+                            <Tooltip title="Open settings">
+                                <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+                                <Avatar/>
+                                </IconButton>
+                            </Tooltip>
+                            <Menu
+                                sx={{ mt: '45px' }}
+                                id="menu-appbar"
+                                anchorEl={anchorElUser}
+                                anchorOrigin={{
+                                vertical: 'top',
+                                horizontal: 'right',
+                                }}
+                                keepMounted
+                                transformOrigin={{
+                                vertical: 'top',
+                                horizontal: 'right',
+                                }}
+                                open={Boolean(anchorElUser)}
+                                onClose={handleCloseUserMenu}
+                            >
+                                <MenuItem onClick={() => navigate('/profile')}>
+                                    <Typography textAlign="center">Profile</Typography>
+                                </MenuItem>
+                                <MenuItem onClick={handleLogout}>
+                                    <Typography textAlign="center">Logout</Typography>
+                                </MenuItem>
+                            </Menu>
+                        </Box>
+                    </Toolbar>
+                </Container>
+            </AppBar>
 
             {showModal && (
                 <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
