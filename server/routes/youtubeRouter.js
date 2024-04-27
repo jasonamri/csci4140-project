@@ -81,4 +81,19 @@ router.post('/search', ensureLoggedIn, ensureValidYoutubeToken, async (req, res)
     res.json(result);
 });
 
+router.post('/pull', ensureLoggedIn, ensureValidYoutubeToken, async (req, res) => {
+    const access_token = req.session.youtube_access_token;
+    const { platform_ref } = req.body;
+    const songs = await Youtube.pull(access_token, platform_ref);
+
+    const result = {
+        status: 'success',
+        data: {
+            songs: songs
+        }
+    }
+
+    res.json(result);
+});
+
 module.exports = router;

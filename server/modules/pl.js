@@ -1,17 +1,37 @@
 const Database = require('./database');
 
 class Playlists {
-    static async create(username, name, creation_type, songs) {
+    static async create(username, name, creation_type, songs, platform, platform_ref) {
+        // add playlist to database
+        let playlist = null
         const query = {
             text: 'INSERT INTO playlists (owner, name, creation_type, songs) VALUES ($1, $2, $3, $4) RETURNING *',
             values: [username, name, creation_type, songs]
         };
         const res = await Database.query(query);
+        if (res.rows.length === 0) {
+            return {
+                status: 'fail',
+                message: 'Failed to create playlist'
+            }
+        }
+        playlist = res.rows[0];
+
+        // add platform_ref if provided
+        if (platform && platform_ref) {
+            const updateQuery = {
+                text: 'UPDATE playlists SET ' + platform + '_status = \'LINKED\', ' + platform + '_ref = $1 WHERE pl_id = $2 RETURNING *',
+                values: [platform_ref, playlist.pl_id]
+            };
+            const updateRes = await Database.query(updateQuery);
+            playlist = updateRes.rows[0];
+        }
+
         return {
             status: 'success',
-            message: 'Playlist created',
+            message: 'Playlist created successfully',
             data: {
-                playlist: res.rows[0]
+                playlist: playlist
             }
         }
     }

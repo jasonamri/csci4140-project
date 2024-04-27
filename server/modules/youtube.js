@@ -9,16 +9,25 @@ const scopes = [
     'https://www.googleapis.com/auth/userinfo.email',
     'https://www.googleapis.com/auth/youtube',
     'https://www.googleapis.com/auth/youtube.readonly',
+    'https://www.googleapis.com/auth/youtube.force-ssl',
+    'https://www.googleapis.com/auth/youtubepartner'
 ];
 
 // Helper functions
 function videoToSong(video) {
     return {
-        youtube_ref: video.id.videoId,
+        youtube_ref: (video.id.videoId || video.contentDetails.videoId || video.id),
         title: video.snippet.title,
         artist: video.snippet.channelTitle,
         album: "",
         image: video.snippet.thumbnails.default.url
+    }
+}
+
+function playlistToPlaylist(playlist) {
+    return {
+        youtube_ref: playlist.id,
+        name: playlist.snippet.title
     }
 }
 
@@ -95,7 +104,8 @@ class Youtube {
 
     static async getPlaylists(access_token) {
         const response = await this.api(access_token).playlists.list({ part: 'snippet', mine: true });
-        return response.data.items;
+        const playlists = response.data.items.map(playlistToPlaylist);
+        return playlists;
     }
 
     static async getSong(access_token, youtube_ref) {
@@ -120,6 +130,14 @@ class Youtube {
 
         return songs.filter(song => !youtube_refs.includes(song.youtube_ref));
         */
+        return songs;
+    }
+
+    static async pull(access_token, youtube_ref) {
+        // pulls all songs from a playlist
+        const response = await this.api(access_token).playlistItems.list({ part: 'snippet, contentDetails', playlistId: youtube_ref });
+        const videos = response.data.items;
+        const songs = videos.map(videoToSong);
         return songs;
     }
 

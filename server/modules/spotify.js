@@ -35,6 +35,13 @@ function trackToSong(track) {
     }
 }
 
+function playlistToPlaylist(playlist) {
+    return {
+        spotify_ref: playlist.id,
+        name: playlist.name
+    }
+}
+
 class Spotify {
 
     static spotifyApi = new SpotifyWebApi({
@@ -106,7 +113,8 @@ class Spotify {
 
     static async getPlaylists(access_token) {
         const data = await this.api(access_token).getUserPlaylists();
-        return data.body.items;
+        const playlists = data.body.items.map(playlistToPlaylist);
+        return playlists;
     }
 
     static async getSong(access_token, spotify_ref) {
@@ -131,6 +139,13 @@ class Spotify {
 
         return songs.filter(song => !spotify_refs.includes(song.spotify_ref));
         */
+        return songs;
+    }
+
+    static async pull(access_token, spotify_ref) {
+        const playlist = await this.api(access_token).getPlaylist(spotify_ref);
+        const tracks = playlist.body.tracks.items.map(item => item.track);
+        const songs = tracks.map(trackToSong);
         return songs;
     }
 

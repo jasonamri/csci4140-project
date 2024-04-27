@@ -80,4 +80,19 @@ router.post('/search', ensureLoggedIn, ensureValidSpotifyToken, async (req, res)
     res.json(result);
 });
 
+router.post('/pull', ensureLoggedIn, ensureValidSpotifyToken, async (req, res) => {
+    const access_token = req.session.spotify_access_token;
+    const { platform_ref } = req.body;
+    const songs = await Spotify.pull(access_token, platform_ref);
+
+    const result = {
+        status: 'success',
+        data: {
+            songs: songs
+        }
+    }
+
+    res.json(result);
+});
+
 module.exports = router;

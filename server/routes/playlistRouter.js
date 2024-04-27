@@ -5,8 +5,8 @@ const { ensureLoggedIn } = require('../modules/middleware');
 const router = express.Router();
 
 router.post('/create', ensureLoggedIn, async (req, res) => {
-    const { name, creation_type, songs } = req.body;
-    const result = await Playlists.create(req.session.username, name, creation_type, songs);
+    const { name, creation_type, songs, platform, platform_ref } = req.body;
+    const result = await Playlists.create(req.session.username, name, creation_type, songs, platform, platform_ref);
     res.json(result);
 });
 
