@@ -123,7 +123,7 @@ class Songs {
             if (inboundRes.rows.length > 0) {
                 return {
                     status: 'soft_match_unilateral',
-                    message: 'Soft match available (case 1)',
+                    message: 'Soft match available, merge? (case 1)',
                     data: {
                         song: song,
                         match: inboundRes.rows[0]
@@ -132,7 +132,7 @@ class Songs {
             } else {
                 return {
                     status: 'no_match',
-                    message: 'No matches available (case 2)',
+                    message: 'No matches available, will create (case 2)',
                     data: {
                         song: song
                     }
@@ -150,7 +150,7 @@ class Songs {
                 if (outboundRes.rows[0].id === inboundRes.rows[0].id) {
                     return {
                         status: 'soft_match_bilateral',
-                        message: 'Mutual match available (case 3)',
+                        message: 'Mutual match available, will merge (case 3)',
                         data: {
                             song: song,
                             match: outboundRes.rows[0],
@@ -160,7 +160,7 @@ class Songs {
                 } else {
                     return {
                         status: 'soft_match_unilateral',
-                        message: 'Soft match available (case 4)',
+                        message: 'Soft match available, merge? (case 4)',
                         data: {
                             song: song,
                             match: outboundRes.rows[0],
@@ -171,7 +171,7 @@ class Songs {
             } else if (outboundRes.rows.length > 0) {
                 return { // TESTED
                     status: 'soft_match_unilateral',
-                    message: 'Soft match available (case 5)',
+                    message: 'Soft match available, merge? (case 5)',
                     data: {
                         song: song,
                         match: outboundRes.rows[0],
@@ -181,7 +181,7 @@ class Songs {
             } else if (inboundRes.rows.length > 0) {
                 return {
                     status: 'soft_match_unilateral',
-                    message: 'Soft match available (case 6)',
+                    message: 'Soft match available, merge? (case 6)',
                     data: {
                         song: song,
                         match: inboundRes.rows[0],
@@ -191,7 +191,7 @@ class Songs {
             } else {
                 return { // TESTED
                     status: 'no_match',
-                    message: 'No matches available (case 7)',
+                    message: 'No matches available, will create (case 7)',
                     data: {
                         song: song,
                         soft_match_ref: secondary_platform_ref
@@ -236,6 +236,7 @@ class Songs {
 
         return {
             status: 'success',
+            message: 'Song created successfully',
             data: {
                 song: song
             }
