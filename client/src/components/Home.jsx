@@ -79,7 +79,7 @@ function Home() {
     };
 
     return (
-        <div>
+        <div className='home'>
             <AppBar position="static">
                 <Container maxWidth="xl">
                     <Toolbar disableGutters>
