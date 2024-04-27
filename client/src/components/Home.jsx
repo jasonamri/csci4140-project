@@ -44,7 +44,7 @@ function Home() {
         setShowModal(!showModal);
 
         const playlistName = document.querySelector('input').value;
-        
+
         // Create a new playlist
         const response = await axios.post('/pl/create', {
             name: playlistName,
@@ -84,24 +84,24 @@ function Home() {
                 <Container maxWidth="xl">
                     <Toolbar disableGutters>
                         <Box sx={{ flexGrow: 1, display: 'flex' }}>
-                        <Button
-                            onClick={toggleModal}
-                            sx={{ my: 2, pr: 5, color: 'white', display: 'block' }}
+                            <Button
+                                onClick={toggleModal}
+                                sx={{ my: 2, pr: 5, color: 'white', display: 'block' }}
                             >
-                            Create New Playlist
-                        </Button>
-                        <Button
-                            onClick={() => navigate('/import')}
-                            sx={{ my: 2, color: 'white', display: 'block' }}
+                                Create New Playlist
+                            </Button>
+                            <Button
+                                onClick={() => navigate('/import')}
+                                sx={{ my: 2, color: 'white', display: 'block' }}
                             >
-                            Import a Playlist
-                        </Button>
+                                Import a Playlist
+                            </Button>
                         </Box>
 
                         <Box sx={{ flexGrow: 0 }}>
                             <Tooltip title="Open settings">
                                 <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                                <Avatar/>
+                                    <Avatar />
                                 </IconButton>
                             </Tooltip>
                             <Menu
@@ -109,13 +109,13 @@ function Home() {
                                 id="menu-appbar"
                                 anchorEl={anchorElUser}
                                 anchorOrigin={{
-                                vertical: 'top',
-                                horizontal: 'right',
+                                    vertical: 'top',
+                                    horizontal: 'right',
                                 }}
                                 keepMounted
                                 transformOrigin={{
-                                vertical: 'top',
-                                horizontal: 'right',
+                                    vertical: 'top',
+                                    horizontal: 'right',
                                 }}
                                 open={Boolean(anchorElUser)}
                                 onClose={handleCloseUserMenu}
@@ -141,35 +141,39 @@ function Home() {
                 </div>
             )}
 
-            <div style={{ padding: '20px' }}>
-                <h2>Playlists</h2>
-                <table border="1">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Privacy</th>
-                            <th>Songs Count</th>
-                            <th>Spotify Status</th>
-                            <th>YouTube Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {playlists.map(playlist => (
-                            <tr key={playlist.pl_id}>
-                                <td>{playlist.name}</td>
-                                <td>{playlist.privacy}</td>
-                                <td>{playlist.songs.length}</td>
-                                <td>{playlist.spotify_status}</td>
-                                <td>{playlist.youtube_status}</td>
-                                <td>
-                                    <button onClick={() => openPlaylist(playlist.pl_id)}>Open</button>
-                                </td>
+            <h2>Playlists</h2>
+            {playlists.length === 0 && <p>No playlists found</p>}
+
+            {playlists.length > 0 && (
+                <div style={{ padding: '20px' }}>
+                    <table border="1">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Privacy</th>
+                                <th>Songs Count</th>
+                                <th>Spotify Status</th>
+                                <th>YouTube Status</th>
+                                <th>Actions</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody>
+                            {playlists.map(playlist => (
+                                <tr key={playlist.pl_id}>
+                                    <td>{playlist.name}</td>
+                                    <td>{playlist.privacy}</td>
+                                    <td>{playlist.songs.length}</td>
+                                    <td>{playlist.spotify_status}</td>
+                                    <td>{playlist.youtube_status}</td>
+                                    <td>
+                                        <button onClick={() => openPlaylist(playlist.pl_id)}>Open</button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </div>
     );
 }
