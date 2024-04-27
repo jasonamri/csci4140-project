@@ -199,6 +199,15 @@ function Playlist() {
                 return null;
             }
         }
+        const addToPlaylist = async (pl_id, song_id) => {
+            // Add the song to the playlist
+            const response = await axios.get('/pl/add-song/' + pl_id + '/' + song_id);
+            if (response.data.status === 'success') {
+                alert(response.data.message);
+            } else {
+                alert('Error adding song: ' + response.data.message || 'An error occurred');
+            }
+        }
 
         // get song id
         let song_id = null;
@@ -213,14 +222,8 @@ function Playlist() {
         }
 
         // Add the song to the playlist
-        const response = await axios.get('/pl/add-song/' + pl_id + '/' + song_id);
-        if (response.data.status === 'success') {
-            alert(response.data.message);
-            fetchSongs();
-        } else {
-            alert('Error adding song: ' + response.data.message || 'An error occurred');
-            fetchSongs();
-        }
+        const response = await addToPlaylist(pl_id, song_id);
+        fetchSongs();
     }
 
     const removeSong = async (song_id) => {
