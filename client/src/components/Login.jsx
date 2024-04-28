@@ -32,7 +32,7 @@ const Login = () => {
         e.preventDefault();
 
         setLoginResult('Processing login...')
-        
+
         //disable login button
         e.target.querySelector('button').disabled = true;
 
@@ -52,7 +52,7 @@ const Login = () => {
     return (
         <div className='login'>
             <Grid>
-                <Paper elevation={10} sx={{ margin: '50px auto', height: '450px', width: '300px'}}>
+                <Paper elevation={10} sx={{ margin: '50px auto', height: '450px', width: '300px' }}>
                     <Stack alignItems={'center'}>
                         <Avatar sx={{ mt: '30px', width: '50px', height: '50px' }}><LockPersonIcon></LockPersonIcon></Avatar>
                         <Typography variant='h4' sx={{ mt: '20px', mb: '20px' }}>Log In</Typography>
@@ -61,7 +61,7 @@ const Login = () => {
                             <TextField type="password" placeholder="Password" name="password" required value={password} onChange={onChange} sx={{ margin: "10px", width: "280px" }}></TextField>
                             <Button variant="contained" type="submit" sx={{ display: "block", margin: "auto", mt: "10px", width: "100px" }}>Login</Button>
                         </form>
-                        <Typography sx={{ mt: '20px' }}>Don't have an account? <Link href="/register">Sign Up</Link></Typography>
+                        <Typography sx={{ mt: '20px' }}>Don't have an account? <Link onClick={() => { navigate('/register') }}>Sign Up</Link></Typography>
                         {loginResult && <Alert severity="info" sx={{ mt: '50px' }}>{loginResult}</Alert>}
                     </Stack>
                 </Paper>
