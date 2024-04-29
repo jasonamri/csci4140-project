@@ -14,9 +14,7 @@ import Logout from './components/Logout';
 import Spotify from './components/Spotify';
 import Youtube from './components/Youtube';
 import Profile from './components/Profile';
-import LinkSpotify from './components/LinkSpotify';
 import CallbackSpotify from './components/CallbackSpotify';
-import LinkYoutube from './components/LinkYoutube';
 import CallbackYoutube from './components/CallbackYoutube';
 
 const App = () => (
@@ -33,9 +31,7 @@ const App = () => (
       <Route path="/logout" element={< Logout />} />
       <Route path="/spotify" element={< Spotify />} />
       <Route path="/youtube" element={< Youtube />} />
-      <Route path="/link-spotify" element={< LinkSpotify />} />
       <Route path="/callback-spotify" element={< CallbackSpotify />} />
-      <Route path="/link-youtube" element={< LinkYoutube />} />
       <Route path="/callback-youtube" element={< CallbackYoutube />} />
     </Routes>
   </Router>
