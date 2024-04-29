@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import {
   Grid,
   Paper,
@@ -13,12 +14,14 @@ import {
 } from '@mui/material';
 
 const Register = () => {
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: ''
-  });
-  const [registrationResult, setRegistrationResult] = useState('');
+    const [formData, setFormData] = useState({
+        username: '',
+        email: '',
+        password: ''
+    });
+    const [registrationResult, setRegistrationResult] = useState('');
+
+    const navigate = useNavigate();
 
   const { username, email, password } = formData;
 
