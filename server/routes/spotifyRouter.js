@@ -51,6 +51,21 @@ router.get('/unlink', ensureLoggedIn, async (req, res) => {
     res.json(result);
 });
 
+router.post('/create-pl', ensureLoggedIn, ensureValidSpotifyToken, async (req, res) => {
+    const access_token = req.session.spotify_access_token;
+    const { name }  = req.body;
+    const playlist = await Spotify.createPlaylist(access_token, name);
+
+    const result = {
+        status: 'success',
+        data: {
+            playlist: playlist
+        }
+    }
+
+    res.json(result);
+})
+
 router.get('/get-all-pls', ensureLoggedIn, ensureValidSpotifyToken, async (req, res) => {
     const access_token = req.session.spotify_access_token;
     const playlists = await Spotify.getPlaylists(access_token);
@@ -90,6 +105,19 @@ router.post('/pull', ensureLoggedIn, ensureValidSpotifyToken, async (req, res) =
         data: {
             songs: songs
         }
+    }
+
+    res.json(result);
+});
+
+router.post('/push', ensureLoggedIn, ensureValidSpotifyToken, async (req, res) => {
+    const access_token = req.session.spotify_access_token;
+    const { platform_ref, songs } = req.body;
+    await Spotify.push(access_token, platform_ref, songs);
+
+    const result = {
+        status: 'success',
+        message: 'Playlist updated successfully'
     }
 
     res.json(result);

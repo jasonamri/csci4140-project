@@ -59,14 +59,45 @@ function Home() {
         }
     }
 
+    const ensurePushable = async (pl_id, platform) => {
+        const response = await axios.get(`/pl/get-songs/${pl_id}`);
+        const songs = response.data.data.songs;
 
-
-    const pushPlaylist = async (pl_id, platform) => {
-
+        for (const song of songs) {
+            if (song[`${platform}_status`] !== 'HARD_MATCH') {
+                alert('Please HARD_MATCH all songs before pushing');
+                return false;
+            }
+        }
+        return songs;
     }
 
-    const exportPlaylist = async (pl_id, platform) => {
+    const pushPlaylist = async (pl_id, platform, platform_ref = null) => {
+        const pushableSongs = await ensurePushable(pl_id, platform);
+        if (!pushableSongs) return;
 
+        // push playlist locally
+        const pushResponse = await axios.post(`/pl/push/${pl_id}`, { platform: platform, platform_ref: platform_ref });
+        const playlist = pushResponse.data.data.playlist;
+
+        // push playlist to platform
+        const platformPushResponse = await axios.post(`/${platform}/push`, { platform_ref: playlist[`${platform}_ref`], songs: pushableSongs });
+        alert('Playlist pushed successfully')
+
+        // update link statuses
+        fetchPlaylists();
+    }
+
+    const exportPlaylist = async (pl_id, platform, playlist_name) => {
+        const pushableSongs = await ensurePushable(pl_id, platform);
+        if (!pushableSongs) return;
+
+        // create playlist
+        const createResponse = await axios.post(`/${platform}/create-pl`, { name: playlist_name });
+        const createdPlaylist = createResponse.data.data.playlist;
+
+        // push playlist
+        pushPlaylist(pl_id, platform, createdPlaylist[`${platform}_ref`])
     }
 
     // Toggle the new playlist modal
@@ -199,10 +230,10 @@ function Home() {
 
                                         {/* Export */} 
                                         {(playlist.spotify_status === 'NOT_LINKED') && (
-                                            <button onClick={() => exportPlaylist(playlist.pl_id, 'spotify')}>Export to Spotify</button>
+                                            <button onClick={() => exportPlaylist(playlist.pl_id, 'spotify', playlist.name)}>Export to Spotify</button>
                                         )}
                                         {(playlist.youtube_status === 'NOT_LINKED') && (
-                                            <button onClick={() => exportPlaylist(playlist.pl_id, 'youtube')}>Export to YouTube</button>
+                                            <button onClick={() => exportPlaylist(playlist.pl_id, 'youtube', playlist.name)}>Export to YouTube</button>
                                         )}
                                     </td>
                                 </tr>
