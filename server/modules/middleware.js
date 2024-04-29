@@ -2,14 +2,20 @@ const Spotify = require('./spotify');
 const Youtube = require('./youtube');
 
 const ensureLoggedIn = (req, res, next) => {
-    if (req.session.username) {
-        next(); // proceed to the next middleware or route handler
-    } else {
+    if (!req.session.username) {
         res.status(401).json({ status: 'unauthorized', message: 'Must be logged in!' });
+        return;
     }
+
+    next();
 }
 
 const ensureValidSpotifyToken = async (req, res, next) => {
+    if (!req.session.spotify_refresh_token) {
+        res.status(402).json({ status: 'missing_token', platform: 'spotify', message: 'Must link Spotify!' });
+        return;
+    }
+
     const refresh_token = req.session.spotify_refresh_token;
     const token_expiry = new Date(req.session.spotify_token_expires).getTime();
 
@@ -24,6 +30,11 @@ const ensureValidSpotifyToken = async (req, res, next) => {
 }
 
 const ensureValidYoutubeToken = async (req, res, next) => {
+    if (!req.session.youtube_refresh_token) {
+        res.status(402).json({ status: 'missing_token', platform: 'youtube', message: 'Must link Youtube!' });
+        return;
+    }
+
     const refresh_token = req.session.youtube_refresh_token;
     const token_expiry = new Date(req.session.youtube_token_expires).getTime();
 

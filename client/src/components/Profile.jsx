@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,6 +8,13 @@ const Profile = () => {
     const [passwordChangeMessage, setPasswordChangeMessage] = useState('');
 
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const platform_to_link = new URLSearchParams(window.location.search).get('platformToLink');
+        if (platform_to_link) {
+            alert('Please link ' + platform_to_link);
+        }
+    })
 
     const handleChangePassword = async e => {
         e.preventDefault();
