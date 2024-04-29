@@ -2,17 +2,19 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './styles/Home.css';
-import AppBar from '@mui/material/AppBar';
-import Box from '@mui/material/Box';
-import Toolbar from '@mui/material/Toolbar';
-import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
-import Menu from '@mui/material/Menu';
-import Container from '@mui/material/Container';
-import Avatar from '@mui/material/Avatar';
-import Button from '@mui/material/Button';
-import Tooltip from '@mui/material/Tooltip';
-import MenuItem from '@mui/material/MenuItem';
+import {
+    AppBar,
+    Box,
+    Toolbar,
+    IconButton,
+    Typography,
+    Menu,
+    Container,
+    Avatar,
+    Button,
+    Tooltip,
+    MenuItem
+} from '@mui/material';
 
 function Home() {
     const [playlists, setPlaylists] = useState([]);
@@ -125,7 +127,7 @@ function Home() {
 
     return (
         <div className='home'>
-            <AppBar position="static">
+            <AppBar position="static" sx={{ height: '70px' }}>
                 <Container maxWidth="xl">
                     <Toolbar disableGutters>
                         <Box sx={{ flexGrow: 1, display: 'flex' }}>
@@ -186,62 +188,64 @@ function Home() {
                 </div>
             )}
 
-            <h2>Playlists</h2>
-            {playlists.length === 0 && <p>No playlists found</p>}
+            <div style={{ padding: '20px' }}>
+                <h2>Playlists</h2>
+                {playlists.length === 0 && <p>No playlists found</p>}
 
-            {playlists.length > 0 && (
-                <div style={{ padding: '20px' }}>
-                    <table border="1">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Privacy</th>
-                                <th>Songs Count</th>
-                                <th>Spotify Status</th>
-                                <th>YouTube Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {playlists.map(playlist => (
-                                <tr key={playlist.pl_id}>
-                                    <td>{playlist.name}</td>
-                                    <td>{playlist.privacy}</td>
-                                    <td>{playlist.songs.length}</td>
-                                    <td>{playlist.spotify_status}</td>
-                                    <td>{playlist.youtube_status}</td>
-                                    <td>
-                                        <button onClick={() => openPlaylist(playlist.pl_id)}>Open</button>
-                                        {/* Pull */}
-                                        {(playlist.spotify_status === 'LINKED' || playlist.spotify_status === 'LINKED_MODIFIED') && (
-                                            <button onClick={() => pullPlaylist(playlist.pl_id, 'spotify', playlist.spotify_ref)}>Pull from Spotify</button>
-                                        )}
-                                        {(playlist.youtube_status === 'LINKED' || playlist.youtube_status === 'LINKED_MODIFIED') && (
-                                            <button onClick={() => pullPlaylist(playlist.pl_id, 'youtube', playlist.youtube_ref)}>Pull from YouTube</button>
-                                        )}
-
-                                        {/* Push */}
-                                        {(playlist.spotify_status === 'LINKED_MODIFIED') && (
-                                            <button onClick={() => pushPlaylist(playlist.pl_id, 'spotify')}>Push to Spotify</button>
-                                        )}
-                                        {(playlist.youtube_status === 'LINKED_MODIFIED') && (
-                                            <button onClick={() => pushPlaylist(playlist.pl_id, 'youtube')}>Push to YouTube</button>
-                                        )}
-
-                                        {/* Export */} 
-                                        {(playlist.spotify_status === 'NOT_LINKED') && (
-                                            <button onClick={() => exportPlaylist(playlist.pl_id, 'spotify', playlist.name)}>Export to Spotify</button>
-                                        )}
-                                        {(playlist.youtube_status === 'NOT_LINKED') && (
-                                            <button onClick={() => exportPlaylist(playlist.pl_id, 'youtube', playlist.name)}>Export to YouTube</button>
-                                        )}
-                                    </td>
+                {playlists.length > 0 && (
+                    <div style={{ padding: '20px' }}>
+                        <table border="1">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Privacy</th>
+                                    <th>Songs Count</th>
+                                    <th>Spotify Status</th>
+                                    <th>YouTube Status</th>
+                                    <th>Actions</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
+                            </thead>
+                            <tbody>
+                                {playlists.map(playlist => (
+                                    <tr key={playlist.pl_id}>
+                                        <td>{playlist.name}</td>
+                                        <td>{playlist.privacy}</td>
+                                        <td>{playlist.songs.length}</td>
+                                        <td>{playlist.spotify_status}</td>
+                                        <td>{playlist.youtube_status}</td>
+                                        <td>
+                                            <button onClick={() => openPlaylist(playlist.pl_id)}>Open</button>
+                                            {/* Pull */}
+                                            {(playlist.spotify_status === 'LINKED' || playlist.spotify_status === 'LINKED_MODIFIED') && (
+                                                <button onClick={() => pullPlaylist(playlist.pl_id, 'spotify', playlist.spotify_ref)}>Pull from Spotify</button>
+                                            )}
+                                            {(playlist.youtube_status === 'LINKED' || playlist.youtube_status === 'LINKED_MODIFIED') && (
+                                                <button onClick={() => pullPlaylist(playlist.pl_id, 'youtube', playlist.youtube_ref)}>Pull from YouTube</button>
+                                            )}
+
+                                            {/* Push */}
+                                            {(playlist.spotify_status === 'LINKED_MODIFIED') && (
+                                                <button onClick={() => pushPlaylist(playlist.pl_id, 'spotify')}>Push to Spotify</button>
+                                            )}
+                                            {(playlist.youtube_status === 'LINKED_MODIFIED') && (
+                                                <button onClick={() => pushPlaylist(playlist.pl_id, 'youtube')}>Push to YouTube</button>
+                                            )}
+
+                                            {/* Export */}
+                                            {(playlist.spotify_status === 'NOT_LINKED') && (
+                                                <button onClick={() => exportPlaylist(playlist.pl_id, 'spotify', playlist.name)}>Export to Spotify</button>
+                                            )}
+                                            {(playlist.youtube_status === 'NOT_LINKED') && (
+                                                <button onClick={() => exportPlaylist(playlist.pl_id, 'youtube', playlist.name)}>Export to YouTube</button>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
