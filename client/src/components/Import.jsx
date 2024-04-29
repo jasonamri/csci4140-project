@@ -1,51 +1,102 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const Import = () => {
-    const [platform, setPlatform] = useState('');
+    const [disabled, setDisabled] = useState(false);
+    const [platform, setPlatform] = useState(''); // ['spotify', 'youtube']
     const [playlists, setPlaylists] = useState([]);
-    const [playlist, setPlaylist] = useState('');
+    const [playlistIdx, setPlaylistIdx] = useState('');
     const [songs, setSongs] = useState([]);
+    const [readyToImport, setReadyToImport] = useState(false);
     const [showPopup, setShowPopup] = useState("none");
     const [popupSong1, setPopupSong1] = useState({});
     const [popupSong2, setPopupSong2] = useState({});
-    const [readyToImport, setReadyToImport] = useState(false);
     const navigate = useNavigate();
 
-    const handlePlatformChange = async (event) => {
-        const platform = event.target.value;
-        setPlatform(platform);
-        setPlaylists([]);
+    const params = new URLSearchParams(window.location.search);
+    const pl_id = params.get('pl_id');
 
-        const response = await axios.get(`/${platform}/get-all-pls`);
-        setPlaylists(response.data.data.playlists);
-    };
-
-    const handlePlaylistChange = async (event) => {
-        const playlist = playlists[event.target.value];
-        playlist.idx = event.target.value;
-        setPlaylist(playlist);
-        setSongs([]);
-
-        const response = await axios.post(`/${platform}/pull`, { platform_ref: playlist[`${platform}_ref`] })
-
-        // get songs
-        const songs = response.data.data.songs;
-        setSongs(songs);
-
-        for (let song of response.data.data.songs) {
-            console.log(song)
-            console.log({ platform: platform, platform_ref: song[`${platform}_ref`] })
-            axios.post('/song/precreate', { platform: platform, platform_ref: song[`${platform}_ref`] }).then((response) => {
-                // update song
-                song.precreateResult = response;
-                console.log(song.precreateResult)
-                setSongs([...songs]);
-                checkReadyToImport();
-            });
+    useEffect(() => {
+        if (pl_id) {
+            setDisabled(true);
+            setPlatform(params.get('platform'));
         }
-    };
+    });
+
+    useEffect(() => { // handle platform change
+        if (!platform) return;
+
+        const fetchPlaylists = async () => {
+            // clear existing
+            setPlaylists([]);
+            setPlaylistIdx('');
+            setSongs([]);
+
+            // fetch playlists and update
+            const response = await axios.get(`/${platform}/get-all-pls`);
+            const loadedPlaylists = response.data.data.playlists;
+            setPlaylists(loadedPlaylists);
+
+            // select playlist if pl_id is provided
+            if (pl_id) {
+                const selectedPlaylistIdx = loadedPlaylists.findIndex(playlist => playlist[`${platform}_ref`] === params.get('platform_ref'));
+                setPlaylistIdx(selectedPlaylistIdx);
+            }
+        }
+        fetchPlaylists();
+    }, [platform]);
+
+    useEffect(() => { // handle playlist change
+        if (!playlistIdx && playlistIdx !== 0) return;
+
+        const playlist = playlists[playlistIdx];
+
+        const fetchSongs = async () => {
+            // clear existing
+            setSongs([]);
+
+            // fetch songs and update
+            const response = await axios.post(`/${platform}/pull`, { platform_ref: playlist[`${platform}_ref`] })
+            const loadedSongs = response.data.data.songs;
+            setSongs(loadedSongs);
+
+            // precreate songs
+            for (const song of loadedSongs) {
+                axios.post('/song/precreate', { platform: platform, platform_ref: song[`${platform}_ref`] }).then((response) => {
+                    song.precreateResult = response;
+                    setSongs([...loadedSongs]);
+                });
+            }
+        }
+        fetchSongs();
+    }, [playlistIdx]);
+
+    useEffect(() => { // check if ready to import
+        if (songs.length === 0) {
+            setReadyToImport(false);
+            return;
+        }
+
+        for (let song of songs) {
+            //check that all songs have been precreated
+            if (!song.precreateResult) {
+                setReadyToImport(false);
+                // DEBUG console.log("Song not precreated")
+                return;
+            }
+
+            //check that all unilateral matches have a merge set
+            if (song.precreateResult.data.status === "soft_match_unilateral" && !song.merge) {
+                setReadyToImport(false);
+                // DEBUG console.log("Unilateral match without merge set")
+                return;
+            }
+        }
+
+        // DEBUG console.log("Ready to import")
+        setReadyToImport(true);
+    }, [songs]);
 
     const mergeVerification = (song1, song2) => {
         return new Promise((resolve, reject) => {
@@ -69,23 +120,6 @@ const Import = () => {
         const result = await mergeVerification(song1, song2);
         song.mergeResult = result;
         setSongs([...songs]);
-    }
-
-    const checkReadyToImport = () => {
-        for (let song of songs) {
-            //check that all songs have been precreated
-            if (!song.status) {
-                setReadyToImport(false);
-                return;
-            }
-
-            //check that all unilateral matches have a merge set
-            if (song.status == "soft_match_unilateral" && !song.merge) {
-                setReadyToImport(false);
-                return;
-            }
-        }
-        setReadyToImport(true);
     }
 
     const runImport = async () => {
@@ -149,13 +183,21 @@ const Import = () => {
                 return null;
             }
         }
-        const createPlaylist = async (name, songs = []) => {
-            const createResponse = await axios.post('/pl/create', { name: name, creation_type: 'IMPORT', songs: songs, platform: platform, platform_ref: playlist[`${platform}_ref`] });
+        const createPlaylist = async (name, songs, platform, platform_ref) => {
+            const createResponse = await axios.post('/pl/create', { name: name, creation_type: 'IMPORT', songs: songs, platform: platform, platform_ref: platform_ref });
             if (createResponse.data.status !== 'success') {
                 alert('Error creating playlist: ' + createResponse.data.message || 'An error occurred');
                 return null;
             }
             return createResponse.data.data.playlist;
+        }
+        const pullPlaylist = async (pl_id, songs) => {
+            const pullResponse = await axios.post(`/pl/pull/${pl_id}`, { songs: songs, platform: platform });
+            if (pullResponse.data.status !== 'success') {
+                alert('Error pulling playlist: ' + pullResponse.data.message || 'An error occurred');
+                return null;
+            }
+            return pullResponse.data.data.playlist;
         }
 
         // create songs
@@ -167,15 +209,24 @@ const Import = () => {
             song.song_id = createdSong.song_id;
         }
 
-
-        // create playlist
-        const playlist_name = playlist.name;
+        // check for pull (existing playlist)
         const song_ids = songs.map(song => song.song_id);
-        const createdPlaylist = await createPlaylist(playlist_name, song_ids);
+        if (pl_id) {
+            // pull songs to playlist
+            const pulledPlaylist = await pullPlaylist(pl_id, song_ids);
 
-        // redirect to playlist
-        alert('Playlist created, redirecting: ' + createdPlaylist.name);
-        navigate('/playlist?pl_id=' + createdPlaylist.pl_id);
+            // redirect to playlist
+            alert('Playlist updated, redirecting: ' + pulledPlaylist.name);
+            navigate('/playlist?pl_id=' + pulledPlaylist.pl_id);
+        } else {
+            // create playlist
+            const playlist = playlists[playlistIdx];
+            const createdPlaylist = await createPlaylist(playlist.name, song_ids, platform, playlist[`${platform}_ref`]);
+
+            // redirect to playlist
+            alert('Playlist created, redirecting: ' + createdPlaylist.name);
+            navigate('/playlist?pl_id=' + createdPlaylist.pl_id);
+        }
     }
 
     return (
@@ -197,7 +248,7 @@ const Import = () => {
 
             <div>
                 <label htmlFor="platform">Select Platform:</label>
-                <select id="platform" value={platform} onChange={handlePlatformChange}>
+                <select id="platform" value={platform} onChange={(event) => { setPlatform(event.target.value) }} disabled={disabled}>
                     <option value="">Select Platform</option>
                     <option value="spotify">Spotify</option>
                     <option value="youtube">Youtube</option>
@@ -208,62 +259,57 @@ const Import = () => {
                 <span>Loading playlists...</span>
             )}
 
-
             {playlists.length > 0 && (
                 <div>
                     <label htmlFor="playlist">Select Playlist:</label>
-                    <select id="playlist" value={playlist.idx} onChange={handlePlaylistChange}>
+                    <select id="playlist" value={playlistIdx} onChange={(event) => { setPlaylistIdx(event.target.value) }} disabled={disabled}>
                         <option value="">Select Playlist</option>
-                        {playlists.map((playlist, idx) => {
-                            return <option key={idx} value={idx} >
+                        {playlists.map((playlist, idx) => (
+                            <option key={idx} value={idx}>
                                 {playlist.name}
                             </option>
-                        })}
+                        ))}
                     </select>
+                </div>
+            )}
+
+            {playlistIdx && songs.length === 0 && (
+                <span>Loading songs...</span>
+            )}
+
+            {songs.length > 0 && (
+                <div>
+                    <h3>Songs</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Artist</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {songs.map(song => (
+                                <tr key={song.id}>
+                                    <td>{song.title}</td>
+                                    <td>{song.artist}</td>
+                                    <td>{song.precreateResult ? song.precreateResult.data.message : 'Loading...'}</td>
+                                    <td>{song.precreateResult ? (
+                                        song.precreateResult.data.status === 'soft_match_unilateral' ? (
+                                            <button onClick={() => runMergeVerification(song)}>Merge?</button>
+                                        ) : 'None'
+                                    ) : 'Loading...'}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             )
             }
 
-            {
-                playlist && songs.length === 0 && (
-                    <span>Loading songs...</span>
-                )
-            }
-
-            {
-                songs.length > 0 && (
-                    <div>
-                        <h3>Songs</h3>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Title</th>
-                                    <th>Artist</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {songs.map(song => (
-                                    <tr key={song.id}>
-                                        <td>{song.title}</td>
-                                        <td>{song.artist}</td>
-                                        <td>{song.precreateResult ? song.precreateResult.data.message : 'Loading...'}</td>
-                                        <td>{song.precreateResult ? (
-                                            song.precreateResult.data.status == 'soft_match_unilateral' ? (
-                                                <button onClick={() => runMergeVerification(song)}>Merge?</button>
-                                            ) : 'None'
-                                        ) : 'Loading...'}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )
-            }
-
             <br />
-            <button onClick={runImport} disabled={!readyToImport}>Import</button>
+            <button onClick={runImport} disabled={!readyToImport}>{pl_id ? "Pull" : "Import"}</button>
 
 
         </div >

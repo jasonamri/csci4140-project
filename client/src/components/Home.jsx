@@ -59,6 +59,16 @@ function Home() {
         }
     }
 
+
+
+    const pushPlaylist = async (pl_id, platform) => {
+
+    }
+
+    const exportPlaylist = async (pl_id, platform) => {
+
+    }
+
     // Toggle the new playlist modal
     const toggleModal = () => {
         setShowModal(!showModal);
@@ -66,6 +76,10 @@ function Home() {
 
     const openPlaylist = (pl_id) => {
         navigate('/playlist?pl_id=' + pl_id);
+    }
+
+    const pullPlaylist = async (pl_id, platform, platform_ref) => {
+        navigate('/import?pl_id=' + pl_id + '&platform=' + platform + '&platform_ref=' + platform_ref)
     }
 
     const [anchorElUser, setAnchorElUser] = React.useState(null);
@@ -167,6 +181,29 @@ function Home() {
                                     <td>{playlist.youtube_status}</td>
                                     <td>
                                         <button onClick={() => openPlaylist(playlist.pl_id)}>Open</button>
+                                        {/* Pull */}
+                                        {(playlist.spotify_status === 'LINKED' || playlist.spotify_status === 'LINKED_MODIFIED') && (
+                                            <button onClick={() => pullPlaylist(playlist.pl_id, 'spotify', playlist.spotify_ref)}>Pull from Spotify</button>
+                                        )}
+                                        {(playlist.youtube_status === 'LINKED' || playlist.youtube_status === 'LINKED_MODIFIED') && (
+                                            <button onClick={() => pullPlaylist(playlist.pl_id, 'youtube', playlist.youtube_ref)}>Pull from YouTube</button>
+                                        )}
+
+                                        {/* Push */}
+                                        {(playlist.spotify_status === 'LINKED_MODIFIED') && (
+                                            <button onClick={() => pushPlaylist(playlist.pl_id, 'spotify')}>Push to Spotify</button>
+                                        )}
+                                        {(playlist.youtube_status === 'LINKED_MODIFIED') && (
+                                            <button onClick={() => pushPlaylist(playlist.pl_id, 'youtube')}>Push to YouTube</button>
+                                        )}
+
+                                        {/* Export */} 
+                                        {(playlist.spotify_status === 'NOT_LINKED') && (
+                                            <button onClick={() => exportPlaylist(playlist.pl_id, 'spotify')}>Export to Spotify</button>
+                                        )}
+                                        {(playlist.youtube_status === 'NOT_LINKED') && (
+                                            <button onClick={() => exportPlaylist(playlist.pl_id, 'youtube')}>Export to YouTube</button>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
