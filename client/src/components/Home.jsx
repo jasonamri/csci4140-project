@@ -98,6 +98,16 @@ function Home() {
     }
   }
 
+  const runFunction = async (functionName) => {
+    const response = await axios.post(`/functions/${functionName}`, { pl_ids: selectedPlaylists });
+    if (response.data.status === 'success') {
+      alert('Function ran successfully');
+      fetchPlaylists();
+    } else {
+      alert('Error running function: ' + response.data.message || 'An error occurred');
+    }
+  }
+
   const ensurePushable = async (pl_id, platform) => {
     const response = await axios.get(`/pl/get-songs/${pl_id}`);
     const songs = response.data.data.songs;
@@ -198,13 +208,24 @@ function Home() {
 
         {numSelected > 0 && (
           <>
-            <Button size="small" sx={{ width: '200px' }}>Merge Playlists</Button>
-            <Tooltip title="Delete">
-              <IconButton onClick={deletePlaylists}>
-                <DeleteIcon />
-              </IconButton>
-            </Tooltip>
+            <Button size="small" onClick={() => { runFunction('clone') }} sx={{ width: '200px' }}>Clone</Button>
+            <Button size="small" onClick={() => { runFunction('deduplicate') }} sx={{ width: '200px' }}>Deduplicate</Button>
           </>
+        )}
+
+        {numSelected > 1 && (
+          <>
+            <Button size="small" onClick={() => { runFunction('merge') }} sx={{ width: '200px' }}>Merge</Button>
+            <Button size="small" onClick={() => { runFunction('overlap') }} sx={{ width: '200px' }}>Overlap</Button>
+          </>
+        )}
+
+        {numSelected > 0 && (
+          <Tooltip title="Delete">
+            <IconButton onClick={deletePlaylists}>
+              <DeleteIcon />
+            </IconButton>
+          </Tooltip>
         )}
       </Toolbar>
     );

@@ -218,6 +218,7 @@ function Playlist() {
       const response = await axios.get('/pl/add-song/' + pl_id + '/' + song_id);
       if (response.data.status === 'success') {
         alert(response.data.message);
+        fetchSongs();
       } else {
         alert('Error adding song: ' + response.data.message || 'An error occurred');
       }
@@ -236,13 +237,7 @@ function Playlist() {
     }
 
     // Add the song to the playlist
-    const response = await addToPlaylist(pl_id, song_id);
-    if (response.data.status === 'success') {
-      alert(response.data.message);
-      fetchSongs();
-    } else {
-      alert('Error adding song: ' + response.data.message || 'An error occurred');
-    }
+    await addToPlaylist(pl_id, song_id);
   }
 
   const removeSong = async (song_id) => {
