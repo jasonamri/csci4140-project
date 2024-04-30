@@ -36,6 +36,25 @@ class Playlists {
         }
     }
 
+    static async delete(username, pl_id) {
+        // delete playlist
+        const query = {
+            text: 'DELETE FROM playlists WHERE owner = $1 AND pl_id = $2 RETURNING *',
+            values: [username, pl_id]
+        };
+        const res = await Database.query(query);
+        if (res.rows.length === 0) {
+            return {
+                status: 'fail',
+                message: 'Playlist not found'
+            }
+        }
+        return {
+            status: 'success',
+            message: 'Playlist deleted'
+        }
+    }
+
     static async pull(username, pl_id, songs, platform) {
         // update songs
         let playlist = null;

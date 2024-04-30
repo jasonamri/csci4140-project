@@ -23,58 +23,6 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import { DataGrid } from '@mui/x-data-grid';
 
-function EnhancedTableToolbar(props) {
-  const { numSelected } = props;
-
-  return (
-    <Toolbar
-      sx={{
-        pl: { sm: 2 },
-        pr: { xs: 1, sm: 1 },
-        ...(numSelected > 0 && {
-          bgcolor: (theme) =>
-            alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity),
-        }),
-      }}
-    >
-      {numSelected > 0 ? (
-        <Typography
-          sx={{ flex: '1 1 100%' }}
-          color="inherit"
-          variant="subtitle1"
-          component="div"
-        >
-          {numSelected} selected
-        </Typography>
-      ) : (
-        <Typography
-          sx={{ flex: '1 1 100%' }}
-          variant="h6"
-          id="tableTitle"
-          component="div"
-        >
-          Playlists
-        </Typography>
-      )}
-
-      {numSelected > 0 && (
-        <>
-          <Button size="small" sx={{ width: '200px' }}>Merge Playlists</Button>
-          <Tooltip title="Delete">
-            <IconButton>
-              <DeleteIcon />
-            </IconButton>
-          </Tooltip>
-        </>
-      )}
-    </Toolbar>
-  );
-}
-
-EnhancedTableToolbar.propTypes = {
-  numSelected: PropTypes.number.isRequired,
-};
-
 function Home() {
   const [playlists, setPlaylists] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -88,10 +36,10 @@ function Home() {
     const response = await axios.get('/pl/get-all');
     const playlists = response.data.data.playlists;
     setPlaylists(playlists);
-    
+
     const rows = [];
     for (const playlist of playlists) {
-      const row = { 
+      const row = {
         id: playlist.pl_id,
         name: playlist.name,
         privacy: playlist.privacy,
@@ -135,6 +83,18 @@ function Home() {
       fetchPlaylists();
     } else {
       alert('Error creating playlist: ' + response.data.message || 'An error occurred');
+    }
+  }
+
+  const deletePlaylists = async () => {
+    for (const pl_id of selectedPlaylists) {
+      const response = await axios.delete(`/pl/delete/${pl_id}`);
+      if (response.data.status === 'success') {
+        alert('Playlist deleted successfully');
+        fetchPlaylists();
+      } else {
+        alert('Error deleting playlist: ' + response.data.message || 'An error occurred');
+      }
     }
   }
 
@@ -200,6 +160,58 @@ function Home() {
 
   const handleCloseUserMenu = () => {
     setAnchorElUser(null);
+  };
+
+  function EnhancedTableToolbar(props) {
+    const { numSelected } = props;
+
+    return (
+      <Toolbar
+        sx={{
+          pl: { sm: 2 },
+          pr: { xs: 1, sm: 1 },
+          ...(numSelected > 0 && {
+            bgcolor: (theme) =>
+              alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity),
+          }),
+        }}
+      >
+        {numSelected > 0 ? (
+          <Typography
+            sx={{ flex: '1 1 100%' }}
+            color="inherit"
+            variant="subtitle1"
+            component="div"
+          >
+            {numSelected} selected
+          </Typography>
+        ) : (
+          <Typography
+            sx={{ flex: '1 1 100%' }}
+            variant="h6"
+            id="tableTitle"
+            component="div"
+          >
+            Playlists
+          </Typography>
+        )}
+
+        {numSelected > 0 && (
+          <>
+            <Button size="small" sx={{ width: '200px' }}>Merge Playlists</Button>
+            <Tooltip title="Delete">
+              <IconButton onClick={deletePlaylists}>
+                <DeleteIcon />
+              </IconButton>
+            </Tooltip>
+          </>
+        )}
+      </Toolbar>
+    );
+  }
+
+  EnhancedTableToolbar.propTypes = {
+    numSelected: PropTypes.number.isRequired,
   };
 
   const columns = [

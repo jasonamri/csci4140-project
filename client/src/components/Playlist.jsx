@@ -48,7 +48,7 @@ function Playlist() {
   useEffect(() => {
     fetchPlaylist();
     fetchSongs();
-  }, []);
+  });
 
   // Handle logout
   const handleLogout = async () => {
@@ -237,7 +237,12 @@ function Playlist() {
 
     // Add the song to the playlist
     const response = await addToPlaylist(pl_id, song_id);
-    fetchSongs();
+    if (response.data.status === 'success') {
+      alert(response.data.message);
+      fetchSongs();
+    } else {
+      alert('Error adding song: ' + response.data.message || 'An error occurred');
+    }
   }
 
   const removeSong = async (song_id) => {

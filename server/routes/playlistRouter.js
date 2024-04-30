@@ -10,6 +10,11 @@ router.post('/create', ensureLoggedIn, async (req, res) => {
     res.json(result);
 });
 
+router.delete('/delete/:pl_id', ensureLoggedIn, async (req, res) => {
+    const result = await Playlists.delete(req.session.username, req.params.pl_id);
+    res.json(result);
+});
+
 router.post('/pull/:pl_id', ensureLoggedIn, async (req, res) => {
     const { songs, platform } = req.body;
     const result = await Playlists.pull(req.session.username, req.params.pl_id, songs, platform);
@@ -38,7 +43,7 @@ router.get('/get-songs/:pl_id', ensureLoggedIn, async (req, res) => {
 });
 
 router.post('/share/:pl_id', ensureLoggedIn, async (req, res) => {
-    const result = await Playlists.share(req.session.username, req.params.pl_id, );
+    const result = await Playlists.share(req.session.username, req.params.pl_id);
     res.json(result);
 });
 
