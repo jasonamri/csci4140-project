@@ -17,19 +17,7 @@ import {
   MenuItem,
   TextField,
   Stack,
-  TableHead,
-  TableRow,
-  TableCell,
-  Checkbox,
-  Switch,
-  FormControlLabel,
-  TablePagination,
-  Table,
-  Paper,
-  TableBody,
-  TableContainer,
   alpha,
-  TableSortLabel,
   Modal
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
