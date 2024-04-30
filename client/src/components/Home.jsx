@@ -29,23 +29,11 @@ import {
   TableBody,
   TableContainer,
   alpha,
-  TableSortLabel
+  TableSortLabel,
+  Modal
 } from '@mui/material';
-import { visuallyHidden } from '@mui/utils';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { DataGrid } from '@mui/x-data-grid';
-
-// const rows = [
-//   { id: 1, lastName: 'Snow', firstName: 'Jon', age: 35 },
-//   { id: 2, lastName: 'Lannister', firstName: 'Cersei', age: 42 },
-//   { id: 3, lastName: 'Lannister', firstName: 'Jaime', age: 45 },
-//   { id: 4, lastName: 'Stark', firstName: 'Arya', age: 16 },
-//   { id: 5, lastName: 'Targaryen', firstName: 'Daenerys', age: null },
-//   { id: 6, lastName: 'Melisandre', firstName: null, age: 150 },
-//   { id: 7, lastName: 'Clifford', firstName: 'Ferrara', age: 44 },
-//   { id: 8, lastName: 'Frances', firstName: 'Rossini', age: 36 },
-//   { id: 9, lastName: 'Roxie', firstName: 'Harvey', age: 65 },
-// ];
 
 function EnhancedTableToolbar(props) {
   const { numSelected } = props;
@@ -82,11 +70,14 @@ function EnhancedTableToolbar(props) {
       )}
 
       {numSelected > 0 && (
-        <Tooltip title="Delete">
-          <IconButton>
-            <DeleteIcon />
-          </IconButton>
-        </Tooltip>
+        <>
+          <Button size="small" sx={{ width: '200px' }}>Merge Playlists</Button>
+          <Tooltip title="Delete">
+            <IconButton>
+              <DeleteIcon />
+            </IconButton>
+          </Tooltip>
+        </>
       )}
     </Toolbar>
   );
@@ -109,100 +100,115 @@ function Home() {
     const response = await axios.get('/pl/get-all');
     const playlists = response.data.data.playlists;
     setPlaylists(playlists);
-    // setPlaylistRows();
+    
+    const rows = [];
+    for (const playlist of playlists) {
+      const row = { 
+        id: playlist.pl_id,
+        name: playlist.name,
+        privacy: playlist.privacy,
+        songs: playlist.songs.length,
+        spotify_status: playlist.spotify_status,
+        youtube_status: playlist.youtube_status,
+        spotify_ref: playlist.spotify_ref,
+        youtube_ref: playlist.youtube_ref,
+      };
+      rows.push(row);
+    }
+    setPlaylistRows(rows);
   }
 
-    // Fetch playlists on component mount
-    useEffect(() => {
-        fetchPlaylists();
-    }, []);
+  // Fetch playlists on component mount
+  useEffect(() => {
+    fetchPlaylists();
+  }, []);
 
-    // Handle logout
-    const handleLogout = async () => {
-        const response = await axios.get('/auth/logout');
-        if (response.data.status === 'success') {
-            navigate('/login');
-        } else {
-            alert('Error logging out: ' + response.data.message || 'An error occurred');
-        }
-    };
+  // Handle logout
+  const handleLogout = async () => {
+    const response = await axios.get('/auth/logout');
+    if (response.data.status === 'success') {
+      navigate('/login');
+    } else {
+      alert('Error logging out: ' + response.data.message || 'An error occurred');
+    }
+  };
 
   const createPlaylist = async () => {
     setShowModal(!showModal);
 
-        // Create a new playlist
-        const response = await axios.post('/pl/create', {
-            name: playlistName,
-            creation_type: 'BLANK',
-            songs: []
-        });
-        if (response.data.status === 'success') {
-            alert('Playlist created successfully');
-            fetchPlaylists();
-        } else {
-            alert('Error creating playlist: ' + response.data.message || 'An error occurred');
-        }
+    // Create a new playlist
+    const response = await axios.post('/pl/create', {
+      name: newPlaylistName,
+      creation_type: 'BLANK',
+      songs: []
+    });
+    if (response.data.status === 'success') {
+      alert('Playlist created successfully');
+      fetchPlaylists();
+    } else {
+      alert('Error creating playlist: ' + response.data.message || 'An error occurred');
     }
+  }
 
-    const ensurePushable = async (pl_id, platform) => {
-        const response = await axios.get(`/pl/get-songs/${pl_id}`);
-        const songs = response.data.data.songs;
+  const ensurePushable = async (pl_id, platform) => {
+    const response = await axios.get(`/pl/get-songs/${pl_id}`);
+    const songs = response.data.data.songs;
 
-        for (const song of songs) {
-            if (song[`${platform}_status`] !== 'HARD_MATCH') {
-                alert('Please HARD_MATCH all songs before pushing');
-                return false;
-            }
-        }
-        return songs;
+    for (const song of songs) {
+      if (song[`${platform}_status`] !== 'HARD_MATCH') {
+        alert('Please HARD_MATCH all songs before pushing');
+        return false;
+      }
     }
+    return songs;
+  }
 
-    const pushPlaylist = async (pl_id, platform, platform_ref = null) => {
-        const pushableSongs = await ensurePushable(pl_id, platform);
-        if (!pushableSongs) return;
+  const pushPlaylist = async (pl_id, platform, platform_ref = null) => {
+    const pushableSongs = await ensurePushable(pl_id, platform);
+    if (!pushableSongs) return;
 
-        // push playlist locally
-        const pushResponse = await axios.post(`/pl/push/${pl_id}`, { platform: platform, platform_ref: platform_ref });
-        const playlist = pushResponse.data.data.playlist;
+    // push playlist locally
+    const pushResponse = await axios.post(`/pl/push/${pl_id}`, { platform: platform, platform_ref: platform_ref });
+    const playlist = pushResponse.data.data.playlist;
 
-        // push playlist to platform
-        const platformPushResponse = await axios.post(`/${platform}/push`, { platform_ref: playlist[`${platform}_ref`], songs: pushableSongs });
-        alert('Playlist pushed successfully')
+    // push playlist to platform
+    const platformPushResponse = await axios.post(`/${platform}/push`, { platform_ref: playlist[`${platform}_ref`], songs: pushableSongs });
+    alert('Playlist pushed successfully')
 
-        // update link statuses
-        fetchPlaylists();
-    }
+    // update link statuses
+    fetchPlaylists();
+  }
 
-    const exportPlaylist = async (pl_id, platform, playlist_name) => {
-        const pushableSongs = await ensurePushable(pl_id, platform);
-        if (!pushableSongs) return;
+  const exportPlaylist = async (pl_id, platform, playlist_name) => {
+    const pushableSongs = await ensurePushable(pl_id, platform);
+    if (!pushableSongs) return;
 
-        // create playlist
-        const createResponse = await axios.post(`/${platform}/create-pl`, { name: playlist_name });
-        const createdPlaylist = createResponse.data.data.playlist;
+    // create playlist
+    const createResponse = await axios.post(`/${platform}/create-pl`, { name: playlist_name });
+    const createdPlaylist = createResponse.data.data.playlist;
 
-        // push playlist
-        pushPlaylist(pl_id, platform, createdPlaylist[`${platform}_ref`])
-    }
+    // push playlist
+    pushPlaylist(pl_id, platform, createdPlaylist[`${platform}_ref`])
+  }
 
-    // Toggle the new playlist modal
-    const toggleModal = () => {
-        setShowModal(!showModal);
-    };
+  // Toggle the new playlist modal
+  const [open, setOpen] = React.useState(false);
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
 
-    const openPlaylist = (pl_id) => {
-        navigate('/playlist?pl_id=' + pl_id);
-    }
+  const openPlaylist = (pl_id) => {
+    navigate('/playlist?pl_id=' + pl_id);
+  }
 
-    const pullPlaylist = async (pl_id, platform, platform_ref) => {
-        navigate('/import?pl_id=' + pl_id + '&platform=' + platform + '&platform_ref=' + platform_ref)
-    }
+  const pullPlaylist = async (pl_id, platform, platform_ref) => {
+    navigate('/import?pl_id=' + pl_id + '&platform=' + platform + '&platform_ref=' + platform_ref)
+  }
 
-    const [anchorElUser, setAnchorElUser] = React.useState(null);
+  const [anchorElUser, setAnchorElUser] = React.useState(null);
 
-    const handleOpenUserMenu = (event) => {
-        setAnchorElUser(event.currentTarget);
-    };
+  const handleOpenUserMenu = (event) => {
+    setAnchorElUser(event.currentTarget);
+  };
 
   const handleCloseUserMenu = () => {
     setAnchorElUser(null);
@@ -210,117 +216,135 @@ function Home() {
 
   const columns = [
     { field: 'id' },
-    { field: 'name', headerName: 'Playlist Name', width: 200 },
+    { field: 'name', headerName: 'Playlist Name', width: 150 },
     { field: 'privacy', headerName: 'Privacy', width: 100 },
     {
       field: 'songs',
       headerName: 'Songs Count',
       type: 'number',
-      width: 150,
+      width: 100,
     },
-    { field: 'spotify', headerName: 'Spotify Status', width: 150 },
-    { field: 'youtube', headerName: 'YouTube Status', width: 150 },
+    { field: 'spotify_status', headerName: 'Spotify Status', width: 125 },
+    { field: 'youtube_status', headerName: 'YouTube Status', width: 125 },
+    { field: 'spotify_ref' },
+    { field: 'youtube_ref' },
     {
       field: 'actions',
       headerName: 'Actions',
       sortable: false,
-      width: 100,
-      renderCell: ({ row }) => {
-        <Button onClick={() => openPlaylist(row.id)}>Open</Button>
+      width: '100%',
+      renderCell: (params) => {
+        const row = params.row;
+        return (
+          <>
+            <Button size="small" onClick={() => openPlaylist(row.id)}>Open</Button>
+            {/* Pull */}
+            {(row.spotify_status === 'LINKED' || row.spotify_status === 'LINKED_MODIFIED') && (
+              <Button size="small" onClick={() => pullPlaylist(row.id, 'spotify', row.spotify_ref)}>Pull from Spotify</Button>
+            )}
+            {(row.youtube_status === 'LINKED' || row.youtube_status === 'LINKED_MODIFIED') && (
+              <Button size="small" onClick={() => pullPlaylist(row.id, 'youtube', row.youtube_ref)}>Pull from YouTube</Button>
+            )}
+
+            {/* Push */}
+            {(row.spotify_status === 'LINKED_MODIFIED') && (
+              <Button size="small" onClick={() => pushPlaylist(row.id, 'spotify')}>Push to Spotify</Button>
+            )}
+            {(row.youtube_status === 'LINKED_MODIFIED') && (
+              <Button size="small" onClick={() => pushPlaylist(row.id, 'youtube')}>Push to YouTube</Button>
+            )}
+
+            {/* Export */}
+            {(row.spotify_status === 'NOT_LINKED') && (
+              <Button size="small" onClick={() => exportPlaylist(row.id, 'spotify', row.name)}>Export to Spotify</Button>
+            )}
+            {(row.youtube_status === 'NOT_LINKED') && (
+              <Button size="small" onClick={() => exportPlaylist(row.id, 'youtube', row.name)}>Export to YouTube</Button>
+            )}
+          </>
+        )
       }
     },
   ];
 
-  // const createPlaylistRows = () => {
-  //   const rows = [];
-  //   for (const playlist of playlists) {
-  //     const row = { 
-  //       id: playlist.pl_id,
-  //       name: playlist.name,
-  //       privacy: playlist.privacy,
-  //       songs: playlist.songs.length,
-  //       spotify: playlist.spotify_status,
-  //       youtube: playlist.youtube_status,
-  //     };
-  //     rows.push(row);
-  //   }
-  //   setPlaylistRows(rows);
-  // }
+  return (
+    <div className='home'>
+      <AppBar position="static" sx={{ height: '70px' }}>
+        <Container maxWidth="xl">
+          <Toolbar disableGutters>
+            <Box sx={{ flexGrow: 1, display: 'flex' }}>
+              <Button
+                onClick={handleOpen}
+                sx={{ my: 2, pr: 5, color: 'white', display: 'block' }}
+              >
+                Create New Playlist
+              </Button>
+              <Button
+                onClick={() => navigate('/import')}
+                sx={{ my: 2, color: 'white', display: 'block' }}
+              >
+                Import a Playlist
+              </Button>
+            </Box>
 
-    return (
-        <div className='home'>
-            <AppBar position="static" sx={{ height: '70px' }}>
-                <Container maxWidth="xl">
-                    <Toolbar disableGutters>
-                        <Box sx={{ flexGrow: 1, display: 'flex' }}>
-                            <Button
-                                onClick={toggleModal}
-                                sx={{ my: 2, pr: 5, color: 'white', display: 'block' }}
-                            >
-                                Create New Playlist
-                            </Button>
-                            <Button
-                                onClick={() => navigate('/import')}
-                                sx={{ my: 2, color: 'white', display: 'block' }}
-                            >
-                                Import a Playlist
-                            </Button>
-                        </Box>
+            <Box sx={{ flexGrow: 0 }}>
+              <Tooltip title="Open settings">
+                <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+                  <Avatar />
+                </IconButton>
+              </Tooltip>
+              <Menu
+                sx={{ mt: '45px' }}
+                id="menu-appbar"
+                anchorEl={anchorElUser}
+                anchorOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+                keepMounted
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+                open={Boolean(anchorElUser)}
+                onClose={handleCloseUserMenu}
+              >
+                <MenuItem onClick={() => navigate('/profile')}>
+                  <Typography textAlign="center">Profile</Typography>
+                </MenuItem>
+                <MenuItem onClick={handleLogout}>
+                  <Typography textAlign="center">Logout</Typography>
+                </MenuItem>
+              </Menu>
+            </Box>
+          </Toolbar>
+        </Container>
+      </AppBar>
 
-                        <Box sx={{ flexGrow: 0 }}>
-                            <Tooltip title="Open settings">
-                                <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                                    <Avatar />
-                                </IconButton>
-                            </Tooltip>
-                            <Menu
-                                sx={{ mt: '45px' }}
-                                id="menu-appbar"
-                                anchorEl={anchorElUser}
-                                anchorOrigin={{
-                                    vertical: 'top',
-                                    horizontal: 'right',
-                                }}
-                                keepMounted
-                                transformOrigin={{
-                                    vertical: 'top',
-                                    horizontal: 'right',
-                                }}
-                                open={Boolean(anchorElUser)}
-                                onClose={handleCloseUserMenu}
-                            >
-                                <MenuItem onClick={() => navigate('/profile')}>
-                                    <Typography textAlign="center">Profile</Typography>
-                                </MenuItem>
-                                <MenuItem onClick={handleLogout}>
-                                    <Typography textAlign="center">Logout</Typography>
-                                </MenuItem>
-                            </Menu>
-                        </Box>
-                    </Toolbar>
-                </Container>
-            </AppBar>
-
-      {showModal && (
-        <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
-          <Stack spacing={2}>
+      <Modal
+        open={open}
+        onClose={handleClose}
+      >
+        <Box sx={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
+          <Stack spacing={1}>
             <Typography variant='h5'>Create New Playlist</Typography>
             <form onSubmit={createPlaylist}>
               <TextField type="text" size="small" label="Playlist Name" variant="outlined" value={newPlaylistName} required onChange={(e) => setNewPlaylistName(e.target.value)} />
               <br />
-              <Button variant="contained" type="submit" size="small" sx={{ mt: '10px' }}>Create</Button>
+              <Button type="submit" size="small" sx={{ mt: '10px', width: '80px' }}>Create</Button>
             </form>
-            <Button variant="contained" color="error" onClick={toggleModal} size="small" sx={{ width: '50px' }}>Close</Button>
+            <Button color="error" onClick={handleClose} size="small" sx={{ mt: '-20px', width: '75px' }}>Close</Button>
           </Stack>
-        </div>
-      )}
+        </Box>
+      </Modal>
 
-      <div style={{ height: 400, width: '100%' }}>
+      <div style={{ height: 400, width: '90%', display: 'block', margin: 'auto', marginTop: '20px' }}>
         <EnhancedTableToolbar numSelected={selectedPlaylists.length}></EnhancedTableToolbar>
         <DataGrid
           rows={playlistRows}
           columns={columns}
           disableColumnSelector
+          localeText={{ noRowsLabel: "No playlists found", noResultsOverlayLabel: "No playlists found" }}
           initialState={{
             pagination: {
               paginationModel: { page: 0, pageSize: 5 },
@@ -328,6 +352,8 @@ function Home() {
             columns: {
               columnVisibilityModel: {
                 id: false,
+                spotify_ref: false,
+                youtube_ref: false
               }
             }
           }}
@@ -338,67 +364,8 @@ function Home() {
           }}
         />
       </div>
-
-            <div style={{ padding: '20px' }}>
-                <h2>Playlists</h2>
-                {playlists.length === 0 && <p>No playlists found</p>}
-
-                {playlists.length > 0 && (
-                    <div style={{ padding: '20px' }}>
-                        <table border="1">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Privacy</th>
-                                    <th>Songs Count</th>
-                                    <th>Spotify Status</th>
-                                    <th>YouTube Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {playlists.map(playlist => (
-                                    <tr key={playlist.pl_id}>
-                                        <td>{playlist.name}</td>
-                                        <td>{playlist.privacy}</td>
-                                        <td>{playlist.songs.length}</td>
-                                        <td>{playlist.spotify_status}</td>
-                                        <td>{playlist.youtube_status}</td>
-                                        <td>
-                                            <button onClick={() => openPlaylist(playlist.pl_id)}>Open</button>
-                                            {/* Pull */}
-                                            {(playlist.spotify_status === 'LINKED' || playlist.spotify_status === 'LINKED_MODIFIED') && (
-                                                <button onClick={() => pullPlaylist(playlist.pl_id, 'spotify', playlist.spotify_ref)}>Pull from Spotify</button>
-                                            )}
-                                            {(playlist.youtube_status === 'LINKED' || playlist.youtube_status === 'LINKED_MODIFIED') && (
-                                                <button onClick={() => pullPlaylist(playlist.pl_id, 'youtube', playlist.youtube_ref)}>Pull from YouTube</button>
-                                            )}
-
-                                            {/* Push */}
-                                            {(playlist.spotify_status === 'LINKED_MODIFIED') && (
-                                                <button onClick={() => pushPlaylist(playlist.pl_id, 'spotify')}>Push to Spotify</button>
-                                            )}
-                                            {(playlist.youtube_status === 'LINKED_MODIFIED') && (
-                                                <button onClick={() => pushPlaylist(playlist.pl_id, 'youtube')}>Push to YouTube</button>
-                                            )}
-
-                                            {/* Export */}
-                                            {(playlist.spotify_status === 'NOT_LINKED') && (
-                                                <button onClick={() => exportPlaylist(playlist.pl_id, 'spotify', playlist.name)}>Export to Spotify</button>
-                                            )}
-                                            {(playlist.youtube_status === 'NOT_LINKED') && (
-                                                <button onClick={() => exportPlaylist(playlist.pl_id, 'youtube', playlist.name)}>Export to YouTube</button>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
+    </div>
+  );
 }
 
 export default Home;
