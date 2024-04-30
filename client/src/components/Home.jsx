@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './styles/Home.css';
+import PropTypes from 'prop-types';
 import {
   AppBar,
   Box,
@@ -13,18 +14,102 @@ import {
   Avatar,
   Button,
   Tooltip,
-  MenuItem
+  MenuItem,
+  TextField,
+  Stack,
+  TableHead,
+  TableRow,
+  TableCell,
+  Checkbox,
+  Switch,
+  FormControlLabel,
+  TablePagination,
+  Table,
+  Paper,
+  TableBody,
+  TableContainer,
+  alpha,
+  TableSortLabel
 } from '@mui/material';
+import { visuallyHidden } from '@mui/utils';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { DataGrid } from '@mui/x-data-grid';
+
+// const rows = [
+//   { id: 1, lastName: 'Snow', firstName: 'Jon', age: 35 },
+//   { id: 2, lastName: 'Lannister', firstName: 'Cersei', age: 42 },
+//   { id: 3, lastName: 'Lannister', firstName: 'Jaime', age: 45 },
+//   { id: 4, lastName: 'Stark', firstName: 'Arya', age: 16 },
+//   { id: 5, lastName: 'Targaryen', firstName: 'Daenerys', age: null },
+//   { id: 6, lastName: 'Melisandre', firstName: null, age: 150 },
+//   { id: 7, lastName: 'Clifford', firstName: 'Ferrara', age: 44 },
+//   { id: 8, lastName: 'Frances', firstName: 'Rossini', age: 36 },
+//   { id: 9, lastName: 'Roxie', firstName: 'Harvey', age: 65 },
+// ];
+
+function EnhancedTableToolbar(props) {
+  const { numSelected } = props;
+
+  return (
+    <Toolbar
+      sx={{
+        pl: { sm: 2 },
+        pr: { xs: 1, sm: 1 },
+        ...(numSelected > 0 && {
+          bgcolor: (theme) =>
+            alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity),
+        }),
+      }}
+    >
+      {numSelected > 0 ? (
+        <Typography
+          sx={{ flex: '1 1 100%' }}
+          color="inherit"
+          variant="subtitle1"
+          component="div"
+        >
+          {numSelected} selected
+        </Typography>
+      ) : (
+        <Typography
+          sx={{ flex: '1 1 100%' }}
+          variant="h6"
+          id="tableTitle"
+          component="div"
+        >
+          Playlists
+        </Typography>
+      )}
+
+      {numSelected > 0 && (
+        <Tooltip title="Delete">
+          <IconButton>
+            <DeleteIcon />
+          </IconButton>
+        </Tooltip>
+      )}
+    </Toolbar>
+  );
+}
+
+EnhancedTableToolbar.propTypes = {
+  numSelected: PropTypes.number.isRequired,
+};
 
 function Home() {
   const [playlists, setPlaylists] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [newPlaylistName, setNewPlaylistName] = useState('');
   const navigate = useNavigate();
+
+  const [selectedPlaylists, setSelectedPlaylists] = useState([]);
+  const [playlistRows, setPlaylistRows] = useState([]);
 
   const fetchPlaylists = async () => {
     const response = await axios.get('/pl/get-all');
     const playlists = response.data.data.playlists;
     setPlaylists(playlists);
+    // setPlaylistRows();
   }
 
   // Fetch playlists on component mount
@@ -45,11 +130,9 @@ function Home() {
   const createPlaylist = async () => {
     setShowModal(!showModal);
 
-    const playlistName = document.querySelector('input').value;
-
     // Create a new playlist
     const response = await axios.post('/pl/create', {
-      name: playlistName,
+      name: newPlaylistName,
       creation_type: 'BLANK',
       songs: []
     });
@@ -79,6 +162,45 @@ function Home() {
   const handleCloseUserMenu = () => {
     setAnchorElUser(null);
   };
+
+  const columns = [
+    { field: 'id' },
+    { field: 'name', headerName: 'Playlist Name', width: 200 },
+    { field: 'privacy', headerName: 'Privacy', width: 100 },
+    {
+      field: 'songs',
+      headerName: 'Songs Count',
+      type: 'number',
+      width: 150,
+    },
+    { field: 'spotify', headerName: 'Spotify Status', width: 150 },
+    { field: 'youtube', headerName: 'YouTube Status', width: 150 },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      sortable: false,
+      width: 100,
+      renderCell: ({ row }) => {
+        <Button onClick={() => openPlaylist(row.id)}>Open</Button>
+      }
+    },
+  ];
+
+  // const createPlaylistRows = () => {
+  //   const rows = [];
+  //   for (const playlist of playlists) {
+  //     const row = { 
+  //       id: playlist.pl_id,
+  //       name: playlist.name,
+  //       privacy: playlist.privacy,
+  //       songs: playlist.songs.length,
+  //       spotify: playlist.spotify_status,
+  //       youtube: playlist.youtube_status,
+  //     };
+  //     rows.push(row);
+  //   }
+  //   setPlaylistRows(rows);
+  // }
 
   return (
     <div className='home'>
@@ -136,12 +258,41 @@ function Home() {
 
       {showModal && (
         <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
-          <h2>Create New Playlist</h2>
-          <input type="text" placeholder="Playlist Name" /><br />
-          <button onClick={createPlaylist}>Create</button>
-          <button onClick={toggleModal}>Close</button>
+          <Stack spacing={2}>
+            <Typography variant='h5'>Create New Playlist</Typography>
+            <form onSubmit={createPlaylist}>
+              <TextField type="text" size="small" label="Playlist Name" variant="outlined" value={newPlaylistName} required onChange={(e) => setNewPlaylistName(e.target.value)} />
+              <br />
+              <Button variant="contained" type="submit" size="small" sx={{ mt: '10px' }}>Create</Button>
+            </form>
+            <Button variant="contained" color="error" onClick={toggleModal} size="small" sx={{ width: '50px' }}>Close</Button>
+          </Stack>
         </div>
       )}
+
+      <div style={{ height: 400, width: '100%' }}>
+        <EnhancedTableToolbar numSelected={selectedPlaylists.length}></EnhancedTableToolbar>
+        <DataGrid
+          rows={playlistRows}
+          columns={columns}
+          disableColumnSelector
+          initialState={{
+            pagination: {
+              paginationModel: { page: 0, pageSize: 5 },
+            },
+            columns: {
+              columnVisibilityModel: {
+                id: false,
+              }
+            }
+          }}
+          pageSizeOptions={[5, 10]}
+          checkboxSelection
+          onRowSelectionModelChange={(ids) => {
+            setSelectedPlaylists(ids);
+          }}
+        />
+      </div>
 
       <div style={{ padding: '20px' }}>
         <h2>Playlists</h2>
