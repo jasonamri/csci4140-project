@@ -111,6 +111,12 @@ class Spotify {
         }
     }
 
+    static async createPlaylist(access_token, name) {
+        const data = await this.api(access_token).createPlaylist(name, { 'public': false, 'description': 'Created by Smart Playlist Manager' });
+        const playlist = data.body;
+        return playlistToPlaylist(playlist);
+    }
+
     static async getPlaylists(access_token) {
         const data = await this.api(access_token).getUserPlaylists();
         const playlists = data.body.items.map(playlistToPlaylist);
@@ -125,28 +131,21 @@ class Spotify {
 
     static async search(access_token, search_query, count) {
         const results = await this.api(access_token).searchTracks(search_query, { limit: count });
-        const tracks = results.body.tracks.items
+        const tracks = results.body.tracks.items;
         const songs = tracks.map(trackToSong);
-
-        // filter out songs already in database
-        /*
-        const query = {
-            text: 'SELECT * FROM songs WHERE spotify_ref = ANY($1)',
-            values: [songs.map(song => song.spotify_ref)]
-        };
-        const res = await Database.query(query);
-        const spotify_refs = res.rows.map(row => row.spotify_ref);
-
-        return songs.filter(song => !spotify_refs.includes(song.spotify_ref));
-        */
         return songs;
     }
 
     static async pull(access_token, spotify_ref) {
-        const playlist = await this.api(access_token).getPlaylist(spotify_ref);
-        const tracks = playlist.body.tracks.items.map(item => item.track);
-        const songs = tracks.map(trackToSong);
+        const response = await this.api(access_token).getPlaylistTracks(spotify_ref);
+        const tracks = response.body.items;
+        const songs = tracks.map(track => trackToSong(track.track));
         return songs;
+    }
+
+    static async push(access_token, spotify_ref, songs) {
+        const uris = songs.map(song => 'spotify:track:' + song.spotify_ref);
+        await this.api(access_token).replaceTracksInPlaylist(spotify_ref, uris);
     }
 
 }

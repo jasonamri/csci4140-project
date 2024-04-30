@@ -16,7 +16,7 @@ const scopes = [
 // Helper functions
 function videoToSong(video) {
     return {
-        youtube_ref: (video.id.videoId || video.contentDetails.videoId || video.id),
+        youtube_ref: (video.id.videoId || video.id || video.contentDetails.videoId),
         title: video.snippet.title,
         artist: video.snippet.channelTitle,
         album: "",
@@ -102,6 +102,12 @@ class Youtube {
         }
     }
 
+    static async createPlaylist(access_token, name) {
+        const response = await this.api(access_token).playlists.insert({ part: 'snippet', resource: { snippet: { title: name } } });
+        const playlist = playlistToPlaylist(response.data);
+        return playlist;
+    }
+
     static async getPlaylists(access_token) {
         const response = await this.api(access_token).playlists.list({ part: 'snippet', mine: true });
         const playlists = response.data.items.map(playlistToPlaylist);
@@ -118,27 +124,31 @@ class Youtube {
         const results = await this.api(access_token).search.list({ part: 'snippet', q: search_query, maxResults: count });
         const videos = results.data.items
         const songs = videos.map(videoToSong);
-
-        // filter out songs already in database
-        /*
-        const query = {
-            text: 'SELECT * FROM songs WHERE youtube_ref = ANY($1)',
-            values: [songs.map(song => song.youtube_ref)]
-        };
-        const res = await Database.query(query);
-        const youtube_refs = res.rows.map(row => row.youtube_ref);
-
-        return songs.filter(song => !youtube_refs.includes(song.youtube_ref));
-        */
         return songs;
     }
 
     static async pull(access_token, youtube_ref) {
-        // pulls all songs from a playlist
         const response = await this.api(access_token).playlistItems.list({ part: 'snippet, contentDetails', playlistId: youtube_ref });
         const videos = response.data.items;
         const songs = videos.map(videoToSong);
         return songs;
+    }
+
+    static async push(access_token, youtube_ref, songs) {
+        // get existing videos in playlist
+        const response = await this.api(access_token).playlistItems.list({ part: 'snippet', playlistId: youtube_ref });
+        const videos = response.data.items;
+
+        // remove existing videos from playlist
+        await Promise.all(videos.map(async item => {
+            await this.api(access_token).playlistItems.delete({ id: item.id });
+        }));
+
+        // add new videos to playlist
+        const videoIds = songs.map(song => song.youtube_ref);
+        await Promise.all(videoIds.map(async videoId => {
+            await this.api(access_token).playlistItems.insert({ part: 'snippet', resource: { snippet: { playlistId: youtube_ref, resourceId: { kind: 'youtube#video', videoId: videoId } } } });
+        }));
     }
 
 }

@@ -61,7 +61,7 @@ const Login = () => {
               <TextField type="password" placeholder="Password" name="password" required value={password} onChange={onChange} sx={{ margin: "10px", width: "280px" }}></TextField>
               <Button variant="contained" type="submit" sx={{ display: "block", margin: "auto", mt: "10px", width: "100px" }}>Login</Button>
             </form>
-            <Typography sx={{ mt: '20px' }}>Don't have an account? <Link href="/register">Sign Up</Link></Typography>
+            <Typography sx={{ mt: '20px' }}>Don't have an account? <Link onClick={() => { navigate('/register') }}>Sign Up</Link></Typography>
             {loginResult && <Alert severity="info" sx={{ mt: '50px' }}>{loginResult}</Alert>}
           </Stack>
         </Paper>

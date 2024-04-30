@@ -36,6 +36,99 @@ class Playlists {
         }
     }
 
+    static async pull(username, pl_id, songs, platform) {
+        // update songs
+        let playlist = null;
+        const query = {
+            text: 'UPDATE playlists SET songs = $1 WHERE owner = $2 AND pl_id = $3 RETURNING *',
+            values: [songs, username, pl_id]
+        };
+        const res = await Database.query(query);
+        if (res.rows.length === 0) {
+            return {
+                status: 'fail',
+                message: 'Playlist not found'
+            }
+        }
+        playlist = res.rows[0];
+
+        // change from LINKED_MODIFIED to LINKED
+        const spotify_status = res.rows[0].spotify_status;
+        const youtube_status = res.rows[0].youtube_status;
+        let updateQuery = null;
+        if (platform === 'spotify') {
+            if (youtube_status === 'LINKED') {
+                updateQuery = {
+                    text: 'UPDATE playlists SET spotify_status = \'LINKED\', youtube_status = \'LINKED_MODIFIED\' WHERE owner = $1 AND pl_id = $2 RETURNING *',
+                    values: [username, pl_id]
+                };
+            } else {
+                updateQuery = {
+                    text: 'UPDATE playlists SET spotify_status = \'LINKED\' WHERE owner = $1 AND pl_id = $2 RETURNING *',
+                    values: [username, pl_id]
+                };
+            }
+        } else if (platform === 'youtube') {
+            if (spotify_status === 'LINKED') {
+                updateQuery = {
+                    text: 'UPDATE playlists SET spotify_status = \'LINKED_MODIFIED\', youtube_status = \'LINKED\' WHERE owner = $1 AND pl_id = $2 RETURNING *',
+                    values: [username, pl_id]
+                }
+            } else {
+                updateQuery = {
+                    text: 'UPDATE playlists SET youtube_status = \'LINKED\' WHERE owner = $1 AND pl_id = $2 RETURNING *',
+                    values: [username, pl_id]
+                };
+            }
+        } else {
+            return {
+                status: 'fail',
+                message: 'Invalid platform'
+            }
+        }
+        const updateRes = await Database.query(updateQuery);
+        playlist = updateRes.rows[0];
+
+        return {
+            status: 'success',
+            message: 'Playlist updated successfully',
+            data: {
+                playlist: playlist
+            }
+        }
+    }
+
+    static async push(username, pl_id, platform, platform_ref) {
+        let query = null;
+        if (platform_ref) {
+            // Link playlist
+            query = {
+                text: 'UPDATE playlists SET ' + platform + '_status = \'LINKED\', ' + platform + '_ref = $1 WHERE owner = $2 AND pl_id = $3 RETURNING *',
+                values: [platform_ref, username, pl_id]
+            }
+        } else {
+            // change from LINKED_MODIFIED to LINKED
+            query = {
+                text: 'UPDATE playlists SET ' + platform + '_status = \'LINKED\' WHERE owner = $1 AND pl_id = $2 RETURNING *',
+                values: [username, pl_id]
+            };
+        }
+        const res = await Database.query(query);
+        if (res.rows.length === 0) {
+            return {
+                status: 'fail',
+                message: 'Playlist not found'
+            }
+        }
+        return {
+            status: 'success',
+            message: 'Playlist updated successfully',
+            data: {
+                playlist: res.rows[0]
+            }
+        }
+    }
+
     static async get(username, pl_id) {
         const query = {
             text: 'SELECT * FROM playlists WHERE owner = $1 AND pl_id = $2',

@@ -52,7 +52,7 @@ const Register = () => {
               <TextField type="password" placeholder="Password" name="password" required value={password} onChange={onChange} sx={{ margin: "10px", width: "280px" }}></TextField>
               <Button variant="contained" type="submit" sx={{ display: "block", margin: "auto", mt: "10px", width: "100px" }}>Sign Up</Button>
             </form>
-            <Typography sx={{ mt: '20px' }}>Already have an account? <Link href="/login">Log In</Link></Typography>
+            <Typography sx={{ mt: '20px' }}>Already have an account? <Link onClick={() => { navigate('/login') }}>Log In</Link></Typography>
             {registrationResult && <Alert severity="info" sx={{ mt: '50px' }}>{registrationResult}</Alert>}
           </Stack>
         </Paper>

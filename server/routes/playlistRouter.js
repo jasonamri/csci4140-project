@@ -10,6 +10,18 @@ router.post('/create', ensureLoggedIn, async (req, res) => {
     res.json(result);
 });
 
+router.post('/pull/:pl_id', ensureLoggedIn, async (req, res) => {
+    const { songs, platform } = req.body;
+    const result = await Playlists.pull(req.session.username, req.params.pl_id, songs, platform);
+    res.json(result);
+});
+
+router.post('/push/:pl_id', ensureLoggedIn, async (req, res) => {
+    const { platform, platform_ref } = req.body;
+    const result = await Playlists.push(req.session.username, req.params.pl_id, platform, platform_ref);
+    res.json(result);
+});
+
 router.get('/get/:pl_id', ensureLoggedIn, async (req, res) => {
     const result = await Playlists.get(req.session.username, req.params.pl_id);
     res.json(result);
