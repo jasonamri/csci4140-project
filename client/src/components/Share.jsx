@@ -11,12 +11,20 @@ function Playlist() {
 
   const fetchPlaylist = async () => {
     const response = await axios.get('/pl/get/' + pl_id);
+    if (response.data.status !== 'success') {
+      alert('Error fetching playlist: ' + response.data.message || 'An error occurred');
+      return;
+    }
     const playlist = response.data.data.playlist;
     setPlaylist(playlist);
   }
 
   const fetchSongs = async () => {
     const response = await axios.get('/pl/get-songs/' + pl_id);
+    if (response.data.status !== 'success') {
+      alert('Error fetching songs: ' + response.data.message || 'An error occurred');
+      return;
+    }
     const songs = response.data.data.songs;
     setSongs(songs);
   }

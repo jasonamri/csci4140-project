@@ -264,6 +264,7 @@ function Playlist() {
       const response = await axios.get('/pl/add-song/' + pl_id + '/' + song_id);
       if (response.data.status === 'success') {
         alert(response.data.message);
+        fetchPlaylist(); // get link status changes
         fetchSongs();
       } else {
         alert('Error adding song: ' + response.data.message || 'An error occurred');
@@ -290,6 +291,7 @@ function Playlist() {
     const response = await axios.get('/pl/remove-song/' + pl_id + '/' + song_id);
     if (response.data.status === 'success') {
       alert(response.data.message);
+      fetchPlaylist(); // get link status changes
       fetchSongs();
     } else {
       alert('Error removing song: ' + response.data.message || 'An error occurred');

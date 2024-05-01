@@ -140,15 +140,17 @@ class Youtube {
         const videos = response.data.items;
 
         // remove existing videos from playlist
-        await Promise.all(videos.map(async item => {
-            await this.api(access_token).playlistItems.delete({ id: item.id });
-        }));
+        for (const video of videos) {
+            console.log('deleting video', video.id)
+            await this.api(access_token).playlistItems.delete({ id: video.id });
+        }
 
         // add new videos to playlist
         const videoIds = songs.map(song => song.youtube_ref);
-        await Promise.all(videoIds.map(async videoId => {
+        for (const videoId of videoIds) {
+            console.log('adding video', videoId)
             await this.api(access_token).playlistItems.insert({ part: 'snippet', resource: { snippet: { playlistId: youtube_ref, resourceId: { kind: 'youtube#video', videoId: videoId } } } });
-        }));
+        }
     }
 
 }

@@ -52,7 +52,7 @@ router.get('/unlink', ensureLoggedIn, async (req, res) => {
 });
 
 router.post('/create-pl', ensureLoggedIn, ensureValidYoutubeToken, async (req, res) => {
-    const access_token = req.session.spotify_access_token;
+    const access_token = req.session.youtube_access_token;
     const { name }  = req.body;
     const playlist = await Youtube.createPlaylist(access_token, name);
 
