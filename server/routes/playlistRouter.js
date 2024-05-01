@@ -42,6 +42,11 @@ router.get('/get-songs/:pl_id', ensureLoggedIn, async (req, res) => {
     res.json(result);
 });
 
+router.get('/get-all-songs', ensureLoggedIn, async (req, res) => {
+    const result = await Playlists.getAllSongs(req.session.username);
+    res.json(result);
+});
+
 router.post('/share/:pl_id', ensureLoggedIn, async (req, res) => {
     const result = await Playlists.share(req.session.username, req.params.pl_id);
     res.json(result);

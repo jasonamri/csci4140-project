@@ -148,6 +148,21 @@ class Spotify {
         await this.api(access_token).replaceTracksInPlaylist(spotify_ref, uris);
     }
 
+    static async recommend(access_token, songs, count) {
+        // filter out songs without spotify_ref
+        songs = songs.filter(song => song.spotify_ref);
+        
+        // randomly select up ot 5 seed tracks
+        songs = songs.sort(() => Math.random() - 0.5);
+        songs = songs.slice(0, 5);
+
+        const seed_tracks = songs.map(song => song.spotify_ref);
+        const response = await this.api(access_token).getRecommendations({ seed_tracks, limit: count });
+        const tracks = response.body.tracks;
+        const recommended_songs = tracks.map(trackToSong);
+        return recommended_songs;
+    }
+
 }
 
 module.exports = Spotify;

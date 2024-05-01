@@ -208,6 +208,32 @@ class Playlists {
         }
     }
 
+    static async getAllSongs(username) {
+        const query = {
+            text: 'SELECT songs FROM playlists WHERE owner = $1',
+            values: [username]
+        };
+        const res = await Database.query(query);
+        if (res.rows.length === 0) {
+            return {
+                status: 'fail',
+                message: 'No playlists not found'
+            }
+        }
+
+        const song_ids = res.rows.map(pl => pl.songs).flat();
+        const songs = await Database.query({
+            text: 'SELECT * FROM songs WHERE song_id = ANY($1)',
+            values: [song_ids]
+        });
+        return {
+            status: 'success',
+            data: {
+                songs: songs.rows
+            }
+        }
+    }
+
     static async share(username, pl_id) {
         // get current privacy
         let playlist = null;

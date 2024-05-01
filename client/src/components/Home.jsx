@@ -25,7 +25,6 @@ import { DataGrid } from '@mui/x-data-grid';
 
 function Home() {
   const [playlists, setPlaylists] = useState([]);
-  const [showModal, setShowModal] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const navigate = useNavigate();
 
@@ -69,14 +68,27 @@ function Home() {
     }
   };
 
-  const createPlaylist = async () => {
-    setShowModal(!showModal);
+    /*const generatePlaylist = async () => {
+      setOpen(false);
+
+      // get all the user's songs
+      const response = await axios.get('/pl/get-all-songs');
+      const songs = response.data.data.songs;
+
+      // get recommended songs
+      const recoResponse = await axios.post('/spotify/recommend', { songs: songs, count: 25 });
+      const recommended_songs = recoResponse.data.data.songs;
+      createPlaylist(recommended_songs);
+    }*/
+
+  const createPlaylist = async (songs = []) => {
+    setOpen(false);
 
     // Create a new playlist
     const response = await axios.post('/pl/create', {
       name: newPlaylistName,
-      creation_type: 'BLANK',
-      songs: []
+      creation_type: songs ? 'GENERATED' : 'BLANK',
+      songs: songs.map(song => song.song_id)
     });
     if (response.data.status === 'success') {
       alert('Playlist created successfully');
@@ -151,7 +163,10 @@ function Home() {
 
   // Toggle the new playlist modal
   const [open, setOpen] = React.useState(false);
-  const handleOpen = () => setOpen(true);
+  const handleOpen = () => {
+    setOpen(true);
+    // TODO: focus on the input field
+  }
   const handleClose = () => setOpen(false);
 
   const openPlaylist = (pl_id) => {
@@ -349,11 +364,10 @@ function Home() {
         <Box sx={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
           <Stack spacing={1}>
             <Typography variant='h5'>Create New Playlist</Typography>
-            <form onSubmit={createPlaylist}>
-              <TextField type="text" size="small" label="Playlist Name" variant="outlined" value={newPlaylistName} required onChange={(e) => setNewPlaylistName(e.target.value)} />
-              <br />
-              <Button type="submit" size="small" sx={{ mt: '10px', width: '80px' }}>Create</Button>
-            </form>
+            <TextField type="text" size="small" label="Playlist Name" variant="outlined" value={newPlaylistName} required onChange={(e) => setNewPlaylistName(e.target.value)} />
+            <br />
+            <Button size="small" onClick={() => createPlaylist()} sx={{ mt: '10px', width: '240px' }}>Create Blank</Button>
+            {/*<Button size="small" onClick={() => generatePlaylist()} sx={{ mt: '10px', width: '240px' }}>Create Recommended</Button>*/}
             <Button color="error" onClick={handleClose} size="small" sx={{ mt: '-20px', width: '75px' }}>Close</Button>
           </Stack>
         </Box>

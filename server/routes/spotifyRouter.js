@@ -123,4 +123,19 @@ router.post('/push', ensureLoggedIn, ensureValidSpotifyToken, async (req, res) =
     res.json(result);
 });
 
+router.post('/recommend', ensureLoggedIn, ensureValidSpotifyToken, async (req, res) => {
+    const access_token = req.session.spotify_access_token;
+    const { songs, count } = req.body;
+    const recommended_songs = await Spotify.recommend(access_token, songs, count);
+
+    const result = {
+        status: 'success',
+        data: {
+            songs: recommended_songs
+        }
+    }
+
+    res.json(result);
+});
+
 module.exports = router;

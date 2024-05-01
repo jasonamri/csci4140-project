@@ -182,6 +182,15 @@ function Playlist() {
     }
   };
 
+  const getRecommendedSongs = async () => {
+    const response = await axios.post('/spotify/recommend', { songs: songs, count: 5 });
+    const recommended_songs = response.data.data.songs;
+    const results = {};
+    results.spotify = recommended_songs;
+    results.spotifyIsRecommended = true;
+    setAddSongResults(results);
+  }
+
   const mergeVerification = (song1, song2) => {
     return new Promise((resolve, reject) => {
       setShowPopup("block");
@@ -330,6 +339,7 @@ function Playlist() {
       setAddSongResults({});
       document.getElementById('add_search').focus();
       document.getElementById('add_search').value = '';
+      getRecommendedSongs();
     }
   }, [showAddModal]);
 
@@ -479,7 +489,7 @@ function Playlist() {
             </tbody>
           </table>
 
-          <h4>Spotify Results</h4>
+          <h4>Spotify Results {addSongResults.spotifyIsRecommended && ('(Recommended)')}</h4>
           <table border="1">
             <thead>
               <tr>
