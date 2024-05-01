@@ -22,6 +22,12 @@ axios.interceptors.response.use(
     // Any status codes that falls outside the range of 2xx cause this function to trigger
     // For example, handle 401 Unauthorized error
     if (error.response.status === 401) {
+      // if on /share, store the pl_id to a cookie
+      if (window.location.pathname === '/share') {
+        console.log('storing pl_id cookie')
+        document.cookie = 'share_pl_id=' + new URLSearchParams(window.location.search).get('pl_id');
+      }
+
       // login required, redirect to login page
       window.location.href = '/login';
     } else if (error.response.status === 402) {

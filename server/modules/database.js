@@ -87,7 +87,7 @@ class Database {
           spotify_ref TEXT,
           youtube_status VARCHAR(50) DEFAULT 'NOT_LINKED' CHECK (youtube_status IN ('LINKED', 'LINKED_MODIFIED', 'NOT_LINKED')),
           youtube_ref TEXT,
-          creation_type VARCHAR(50) CHECK (creation_type IN ('IMPORT', 'FUNCTION', 'BLANK', 'GENERATED')),
+          creation_type VARCHAR(50) CHECK (creation_type IN ('IMPORT', 'FUNCTION', 'BLANK', 'GENERATED', 'SHARED')),
           date_created TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
           date_last_modified TIMESTAMP WITH TIME ZONE
       );`;

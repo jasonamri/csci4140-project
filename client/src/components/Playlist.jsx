@@ -331,6 +331,22 @@ function Playlist() {
     }
   }, [showAddModal]);
 
+  const share = async () => {
+    const response = await axios.post('/pl/share/' + pl_id);
+    if (response.data.status === 'success') {
+      alert(response.data.message);
+      fetchPlaylist();
+    } else {
+      alert('Error sharing playlist: ' + response.data.message || 'An error occurred');
+    }
+  }
+
+  const copySharingLink = () => {
+    const sharingLink = window.location.origin + '/share?pl_id=' + playlist.pl_id;
+    navigator.clipboard.writeText(sharingLink);
+    alert('Sharing link copied to clipboard');
+  }
+
   const [anchorElUser, setAnchorElUser] = React.useState(null);
 
   const handleOpenUserMenu = (event) => {
@@ -563,10 +579,12 @@ function Playlist() {
       <div style={{ padding: '20px' }}>
         <div>
           <h2>Playlist: {playlist.name}</h2>
-          <p>Privacy: {playlist.privacy}</p>
           <p>Songs Count: {songs.length}</p>
           <p>Spotify Status: {playlist.spotify_status}</p>
           <p>YouTube Status: {playlist.youtube_status}</p>
+          <p>Privacy: {playlist.privacy}</p>
+          {playlist && (<button onClick={share}>Toggle Privacy</button>)}
+          {playlist && playlist.privacy === 'SHARED' && (<button onClick={copySharingLink}>Copy Sharing Link</button>)}
         </div>
         <h3>Songs</h3>
         <table border="1">

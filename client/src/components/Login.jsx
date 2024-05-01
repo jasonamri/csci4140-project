@@ -42,6 +42,15 @@ const Login = () => {
     };
     const response = await axios.post('/auth/login', data);
     if (response.data.status === 'success') {
+      // if share_pl_id cookie is set, clear it and redirect to /share?pl_id=share_pl_id
+      if (document.cookie.includes('share_pl_id')) {
+        const share_pl_id = document.cookie.split('share_pl_id=')[1].split(';')[0];
+        document.cookie = 'share_pl_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        navigate('/share?pl_id=' + share_pl_id);
+        return;
+      }
+
+      // otherwise go to /home
       navigate('/home');
     } else {
       setLoginResult('Login failed: ' + response.data.message || 'An error occurred');

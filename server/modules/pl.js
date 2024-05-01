@@ -150,7 +150,7 @@ class Playlists {
 
     static async get(username, pl_id) {
         const query = {
-            text: 'SELECT * FROM playlists WHERE owner = $1 AND pl_id = $2',
+            text: 'SELECT * FROM playlists WHERE (owner = $1 OR privacy = \'SHARED\') AND pl_id = $2',
             values: [username, pl_id]
         };
         const res = await Database.query(query);
@@ -184,7 +184,7 @@ class Playlists {
 
     static async getSongs(username, pl_id) {
         const query = {
-            text: 'SELECT songs FROM playlists WHERE owner = $1 AND pl_id = $2',
+            text: 'SELECT songs FROM playlists WHERE (owner = $1 OR privacy = \'SHARED\') AND pl_id = $2',
             values: [username, pl_id]
         };
         const res = await Database.query(query);
@@ -210,8 +210,9 @@ class Playlists {
 
     static async share(username, pl_id) {
         // get current privacy
+        let playlist = null;
         const query = {
-            text: 'SELECT privacy FROM playlists WHERE owner = $1 AND id = $2',
+            text: 'SELECT * FROM playlists WHERE owner = $1 AND pl_id = $2',
             values: [username, pl_id]
         };
         const res = await Database.query(query);
@@ -221,17 +222,28 @@ class Playlists {
                 message: 'Playlist not found'
             }
         }
+        playlist = res.rows[0];
 
         // update privacy
-        const privacy = res.rows[0].privacy === 'PRIVATE' ? 'SHARED' : 'PRIVATE';
-        await Database.query({
-            text: 'UPDATE playlists SET privacy = $1 WHERE owner = $2 AND id = $3 RETURNING *',
-            values: [privacy, username, pl_id]
+        const newPrivacy = playlist.privacy === 'PRIVATE' ? 'SHARED' : 'PRIVATE';
+        const updateRes = await Database.query({
+            text: 'UPDATE playlists SET privacy = $1 WHERE owner = $2 AND pl_id = $3 RETURNING *',
+            values: [newPrivacy, username, pl_id]
         });
+        if (updateRes.rows.length === 0) {
+            return {
+                status: 'fail',
+                message: 'Failed to update playlist'
+            }
+        }
+        playlist = updateRes.rows[0];
+
         return {
             status: 'success',
-            message: 'Playlist shared',
-            data: res.rows[0]
+            message: 'Playlist sharing set to ' + newPrivacy,
+            data: {
+                playlist: playlist
+            }
         }
     }
 
