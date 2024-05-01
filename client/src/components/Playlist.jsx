@@ -16,18 +16,19 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
+
 function Playlist() {
   const [playlist, setPlaylist] = useState({});
   const [songs, setSongs] = useState([]);
-  const [songResults, setSongResults] = useState({});
-  const [songResults2, setSongResults2] = useState({});
-  const [showModal, setShowModal] = useState(false);
-  const [showModal2, setShowModal2] = useState(false);
+  const [addSongResults, setAddSongResults] = useState({});
+  const [linkSongResults, setLinkSongResults] = useState({});
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showLinkModal, setShowLinkModal] = useState(false);
   const [showPopup, setShowPopup] = useState("none");
   const [popupSong1, setPopupSong1] = useState({});
   const [popupSong2, setPopupSong2] = useState({});
   const [platform, setPlatform] = useState('');
-  const [songId, setSongId] = useState('');
+  const [songToLink, setSongToLink] = useState(null);
   const navigate = useNavigate();
 
   const pl_id = new URLSearchParams(window.location.search).get('pl_id');
@@ -48,7 +49,7 @@ function Playlist() {
   useEffect(() => {
     fetchPlaylist();
     fetchSongs();
-  });
+  }, []);
 
   // Handle logout
   const handleLogout = async () => {
@@ -60,12 +61,57 @@ function Playlist() {
     }
   };
 
+  const pullPlaylist = async (pl_id, platform, platform_ref) => {
+    navigate('/import?pl_id=' + pl_id + '&platform=' + platform + '&platform_ref=' + platform_ref)
+  }
+
+  const ensurePushable = async (pl_id, platform) => {
+    const response = await axios.get(`/pl/get-songs/${pl_id}`);
+    const songs = response.data.data.songs;
+
+    for (const song of songs) {
+      if (song[`${platform}_status`] !== 'HARD_MATCH') {
+        alert('Please HARD_MATCH all songs before pushing');
+        return false;
+      }
+    }
+    return songs;
+  }
+
+  const pushPlaylist = async (pl_id, platform, platform_ref = null) => {
+    const pushableSongs = await ensurePushable(pl_id, platform);
+    if (!pushableSongs) return;
+
+    // push playlist locally
+    const pushResponse = await axios.post(`/pl/push/${pl_id}`, { platform: platform, platform_ref: platform_ref });
+    const playlist = pushResponse.data.data.playlist;
+
+    // push playlist to platform
+    const platformPushResponse = await axios.post(`/${platform}/push`, { platform_ref: playlist[`${platform}_ref`], songs: pushableSongs });
+    alert('Playlist pushed successfully')
+
+    // update link statuses
+    fetchPlaylist();
+  }
+
+  const exportPlaylist = async (pl_id, platform, playlist_name) => {
+    const pushableSongs = await ensurePushable(pl_id, platform);
+    if (!pushableSongs) return;
+
+    // create playlist
+    const createResponse = await axios.post(`/${platform}/create-pl`, { name: playlist_name });
+    const createdPlaylist = createResponse.data.data.playlist;
+
+    // push playlist
+    pushPlaylist(pl_id, platform, createdPlaylist[`${platform}_ref`])
+  }
+
   let cancelTokenSource = null;
-  const search = async () => {
-    const query = document.querySelector('input').value;
+  const addSearch = async () => {
+    const query = document.getElementById('add_search').value;
 
     if (query.length < 3) {
-      setSongResults({});
+      setAddSongResults({});
       // Cancel the previous request if it exists
       if (cancelTokenSource) {
         cancelTokenSource.cancel("Search input is too short");
@@ -90,7 +136,7 @@ function Playlist() {
       results.spotify = response.data.data.spotify;
       results.youtube = response.data.data.youtube;
 
-      setSongResults(results);
+      setAddSongResults(results);
     } catch (error) {
       if (axios.isCancel(error)) {
         console.log("Previous search request cancelled:", error.message);
@@ -101,11 +147,11 @@ function Playlist() {
   };
 
   let cancelTokenSource2 = null;
-  const search2 = async () => {
-    const query = document.querySelector('input').value;
+  const linkSearch = async () => {
+    const query = document.getElementById('link_search').value;
 
     if (query.length < 3) {
-      setSongResults2({});
+      setLinkSongResults({});
       // Cancel the previous request if it exists
       if (cancelTokenSource2) {
         cancelTokenSource2.cancel("Search input is too short");
@@ -126,7 +172,7 @@ function Playlist() {
     try {
       const response = await axios.post('/' + platform + '/search', { query: query, count: 5 }, { cancelToken: cancelTokenSource2.token });
       results.results = response.data.data.results;
-      setSongResults2(results);
+      setLinkSongResults(results);
     } catch (error) {
       if (axios.isCancel(error)) {
         console.log("Previous search request cancelled:", error.message);
@@ -153,7 +199,7 @@ function Playlist() {
   }
 
   const addSong = async (platform, platform_ref) => {
-    setShowModal(!showModal);
+    setShowAddModal(false);
 
     // api interface helpers
     const merge = async (song_1, song_2) => {
@@ -251,7 +297,7 @@ function Playlist() {
   }
 
   const linkSong = async (song_id, platform, platform_ref) => {
-    setShowModal2(!showModal2);
+    setShowLinkModal(false);
     const response = await axios.post('/song/link', { song_id: song_id, platform: platform, platform_ref: platform_ref });
     if (response.data.status === 'success') {
       alert(response.data.message);
@@ -261,17 +307,29 @@ function Playlist() {
     }
   }
 
-  // Toggle the new playlist modal
-  const toggleModal = () => {
-    setShowModal(!showModal);
-  };
-
-  // Toggle the link modal
-  const toggleModal2 = (song_id, platform) => {
+  // Launch the link search window
+  const launchLinkSearch = (song, platform) => {
     setPlatform(platform);
-    setSongId(song_id);
-    setShowModal2(!showModal2);
+    setSongToLink(song);
+    setShowLinkModal(true);
   }
+
+  useEffect(() => {
+    if (showLinkModal) {
+      setLinkSongResults({});
+      document.getElementById('link_search').focus();
+      document.getElementById('link_search').value = songToLink.title + ' ' + songToLink.artist;
+      linkSearch();
+    }
+  }, [showLinkModal]);
+
+  useEffect(() => {
+    if (showAddModal) {
+      setAddSongResults({});
+      document.getElementById('add_search').focus();
+      document.getElementById('add_search').value = '';
+    }
+  }, [showAddModal]);
 
   const [anchorElUser, setAnchorElUser] = React.useState(null);
 
@@ -298,11 +356,47 @@ function Playlist() {
                 </Button>
               </Tooltip>
               <Button
-                onClick={toggleModal}
+                onClick={() => setShowAddModal(true)}
                 sx={{ ml: '10px', my: 2, color: 'white', display: 'block' }}
               >
                 Add a song
               </Button>
+
+              {/* Pull */}
+              {(playlist.spotify_status === 'LINKED' || playlist.spotify_status === 'LINKED_MODIFIED') && (
+                <Button size="small"
+                  onClick={() => pullPlaylist(playlist.pl_id, 'spotify', playlist.spotify_ref)}
+                  sx={{ ml: '10px', my: 2, color: 'white', display: 'block' }}>Pull from Spotify</Button>
+              )}
+              {(playlist.youtube_status === 'LINKED' || playlist.youtube_status === 'LINKED_MODIFIED') && (
+                <Button size="small"
+                  onClick={() => pullPlaylist(playlist.pl_id, 'youtube', playlist.youtube_ref)}
+                  sx={{ ml: '10px', my: 2, color: 'white', display: 'block' }}>Pull from YouTube</Button>
+              )}
+
+              {/* Push */}
+              {(playlist.spotify_status === 'LINKED_MODIFIED') && (
+                <Button size="small"
+                  onClick={() => pushPlaylist(playlist.pl_id, 'spotify')}
+                  sx={{ ml: '10px', my: 2, color: 'white', display: 'block' }}>Push to Spotify</Button>
+              )}
+              {(playlist.youtube_status === 'LINKED_MODIFIED') && (
+                <Button size="small"
+                  onClick={() => pushPlaylist(playlist.pl_id, 'youtube')}
+                  sx={{ ml: '10px', my: 2, color: 'white', display: 'block' }}>Push to YouTube</Button>
+              )}
+
+              {/* Export */}
+              {(playlist.spotify_status === 'NOT_LINKED') && (
+                <Button size="small"
+                  onClick={() => exportPlaylist(playlist.pl_id, 'spotify', playlist.name)}
+                  sx={{ ml: '10px', my: 2, color: 'white', display: 'block' }}>Export to Spotify</Button>
+              )}
+              {(playlist.youtube_status === 'NOT_LINKED') && (
+                <Button size="small"
+                  onClick={() => exportPlaylist(playlist.pl_id, 'youtube', playlist.name)}
+                  sx={{ ml: '10px', my: 2, color: 'white', display: 'block' }}>Export to YouTube</Button>
+              )}
             </Box>
 
             <Box sx={{ flexGrow: 0 }}>
@@ -339,11 +433,11 @@ function Playlist() {
         </Container>
       </AppBar>
 
-      {showModal && (
+      {showAddModal && (
         <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
           <h2>Add a song</h2>
-          <input type="text" placeholder="Search for a song" /><br />
-          <button onClick={search}>Search</button><br />
+          <input id="add_search" type="text" placeholder="Search for a song" onKeyDown={(event) => { if (event.key === 'Enter') addSearch(); }} /><br />
+          <button onClick={addSearch}>Search</button><br />
           <br />
           <h4>Local Results</h4>
           <table border="1">
@@ -355,7 +449,7 @@ function Playlist() {
               </tr>
             </thead>
             <tbody>
-              {songResults.local && songResults.local.map(song => (
+              {addSongResults.local && addSongResults.local.map(song => (
                 <tr key={song.song_id}>
                   <td>{song.title}</td>
                   <td>{song.artist}</td>
@@ -377,7 +471,7 @@ function Playlist() {
               </tr>
             </thead>
             <tbody>
-              {songResults.spotify && songResults.spotify.map(song => (
+              {addSongResults.spotify && addSongResults.spotify.map(song => (
                 <tr key={song.spotify_ref}>
                   <td>{song.title}</td>
                   <td>{song.artist}</td>
@@ -399,7 +493,7 @@ function Playlist() {
               </tr>
             </thead>
             <tbody>
-              {songResults.youtube && songResults.youtube.map(song => (
+              {addSongResults.youtube && addSongResults.youtube.map(song => (
                 <tr key={song.youtube_ref}>
                   <td>{song.title}</td>
                   <td>{song.artist}</td>
@@ -413,15 +507,15 @@ function Playlist() {
 
           <br />
 
-          <button onClick={toggleModal}>Close</button>
+          <button onClick={() => setShowAddModal(false)}>Close</button>
         </div>
       )}
 
-      {showModal2 && (
+      {showLinkModal && (
         <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
           <h2>Link a song</h2>
-          <input type="text" placeholder="Search for a song" /><br />
-          <button onClick={search2}>Search</button><br />
+          <input id="link_search" type="text" placeholder="Search for a song" onKeyDown={(event) => { if (event.key === 'Enter') linkSearch(); }} /><br />
+          <button onClick={linkSearch}>Search</button><br />
           <br />
           <h4>Search Results</h4>
           <table border="1">
@@ -433,12 +527,12 @@ function Playlist() {
               </tr>
             </thead>
             <tbody>
-              {songResults2.results && songResults2.results.map(song => (
+              {linkSongResults.results && linkSongResults.results.map(song => (
                 <tr key={song.youtube_ref || song.spotify_ref}>
                   <td>{song.title}</td>
                   <td>{song.artist}</td>
                   <td>
-                    <button onClick={() => linkSong(songId, platform, song.youtube_ref || song.spotify_ref)}>Link</button>
+                    <button onClick={() => linkSong(songToLink.song_id, platform, song.youtube_ref || song.spotify_ref)}>Link</button>
                   </td>
                 </tr>
               ))}
@@ -447,7 +541,7 @@ function Playlist() {
 
           <br />
 
-          <button onClick={toggleModal}>Close</button>
+          <button onClick={() => setShowLinkModal(false)}>Close</button>
         </div>
       )}
 
@@ -490,8 +584,8 @@ function Playlist() {
               <tr key={song.song_id}>
                 <td>{song.title}</td>
                 <td>{song.artist}</td>
-                <td>{song.spotify_status === "HARD_MATCH" ? song.spotify_status : <button onClick={() => toggleModal2(song.song_id, 'spotify')}>{song.spotify_status}</button>}</td>
-                <td>{song.youtube_status === "HARD_MATCH" ? song.youtube_status : <button onClick={() => toggleModal2(song.song_id, 'youtube')}>{song.youtube_status}</button>}</td>
+                <td>{song.spotify_status === "HARD_MATCH" ? song.spotify_status : <button onClick={() => launchLinkSearch(song, 'spotify')}>{song.spotify_status}</button>}</td>
+                <td>{song.youtube_status === "HARD_MATCH" ? song.youtube_status : <button onClick={() => launchLinkSearch(song, 'youtube')}>{song.youtube_status}</button>}</td>
                 <td>
                   <button onClick={() => removeSong(song.song_id)}>Remove</button>
                 </td>
