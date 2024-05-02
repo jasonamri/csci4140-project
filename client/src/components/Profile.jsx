@@ -31,7 +31,7 @@ const Profile = () => {
         if (platform_to_link) {
             alert('Please link ' + platform_to_link);
         }
-    })
+    }, []);
 
   const handleChangePassword = async e => {
       e.preventDefault();

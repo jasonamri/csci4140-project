@@ -31,7 +31,7 @@ axios.interceptors.response.use(
       // login required, redirect to login page
       window.location.href = '/login';
     } else if (error.response.status === 402) {
-      window.location.href = '/profile?platformToLink=' + error.response.plaform;
+      window.location.href = '/profile?platformToLink=' + error.response.data.platform;
     }
     return Promise.reject(error);
   }
