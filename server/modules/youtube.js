@@ -14,13 +14,27 @@ const scopes = [
 ];
 
 // Helper functions
-function videoToSong(video) {
+function itemToSong(item) {
+    let ref = null;
+    if (item.kind === 'youtube#video') {
+        ref = item.id;
+    } else if (item.kind === 'youtube#searchResult') {
+        ref = item.id.videoId;
+    } else if (item.kind === 'youtube#playlistItem') {
+        ref = item.contentDetails.videoId;
+    } else {
+        console.log("Youtube item kind not recognized");
+        return null;
+    }
+
+    // DEBUG: console.log(ref)
+
     return {
-        youtube_ref: (video.id.videoId || video.id || video.contentDetails.videoId),
-        title: video.snippet.title,
-        artist: video.snippet.channelTitle,
+        youtube_ref: ref,
+        title: item.snippet.title,
+        artist: item.snippet.channelTitle,
         album: "",
-        image: video.snippet.thumbnails.default.url
+        image: ""
     }
 }
 
@@ -116,21 +130,21 @@ class Youtube {
 
     static async getSong(access_token, youtube_ref) {
         const video = await this.api(access_token).videos.list({ part: 'snippet', id: youtube_ref });
-        const song = videoToSong(video.data.items[0]);
+        const song = itemToSong(video.data.items[0]);
         return song;
     }
 
     static async search(access_token, search_query, count) {
         const results = await this.api(access_token).search.list({ part: 'snippet', q: search_query, maxResults: count });
         const videos = results.data.items
-        const songs = videos.map(videoToSong);
+        const songs = videos.map(itemToSong);
         return songs;
     }
 
     static async pull(access_token, youtube_ref) {
         const response = await this.api(access_token).playlistItems.list({ part: 'snippet, contentDetails', playlistId: youtube_ref });
         const videos = response.data.items;
-        const songs = videos.map(videoToSong);
+        const songs = videos.map(itemToSong);
         return songs;
     }
 
