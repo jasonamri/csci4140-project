@@ -12,9 +12,20 @@ import {
   Avatar,
   Button,
   Tooltip,
-  MenuItem
+  MenuItem,
+  Stack,
+  Modal,
+  TextField,
+  TableContainer,
+  Table,
+  TableCell,
+  TableRow,
+  TableHead,
+  TableBody,
+  Paper
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { DataGrid } from '@mui/x-data-grid';
 
 
 function Playlist() {
@@ -29,6 +40,7 @@ function Playlist() {
   const [popupSong2, setPopupSong2] = useState({});
   const [platform, setPlatform] = useState('');
   const [songToLink, setSongToLink] = useState(null);
+  const [songRows, setSongRows] = useState([]);
   const navigate = useNavigate();
 
   const pl_id = new URLSearchParams(window.location.search).get('pl_id');
@@ -43,6 +55,20 @@ function Playlist() {
     const response = await axios.get('/pl/get-songs/' + pl_id);
     const songs = response.data.data.songs;
     setSongs(songs);
+
+    const rows = [];
+    for (const song of songs) {
+      const row = {
+        id: song.youtube_ref || song.spotify_ref,
+        song: song,
+        title: song.title,
+        artist: song.artist,
+        spotify_status: song.spotify_status,
+        youtube_status: song.youtube_status
+      }
+      rows.push(row);
+    }
+    setSongRows(rows);
   }
 
   // Fetch songs on component mount
@@ -148,7 +174,8 @@ function Playlist() {
 
   let cancelTokenSource2 = null;
   const linkSearch = async () => {
-    const query = document.getElementById('link_search').value;
+    const query = linkSearchText;
+    // const query = document.getElementById('link_search').value;
 
     if (query.length < 3) {
       setLinkSongResults({});
@@ -322,14 +349,13 @@ function Playlist() {
   const launchLinkSearch = (song, platform) => {
     setPlatform(platform);
     setSongToLink(song);
+    setLinkSearchText(song.title + ' ' + song.artist);
     setShowLinkModal(true);
   }
 
   useEffect(() => {
     if (showLinkModal) {
       setLinkSongResults({});
-      document.getElementById('link_search').focus();
-      document.getElementById('link_search').value = songToLink.title + ' ' + songToLink.artist;
       linkSearch();
     }
   }, [showLinkModal]);
@@ -368,6 +394,56 @@ function Playlist() {
   const handleCloseUserMenu = () => {
     setAnchorElUser(null);
   };
+
+  const [linkSearchText, setLinkSearchText] = useState("");
+
+  const columns = [
+    { field: 'id' },
+    { field: 'song' },
+    { field: 'title', headerName: 'Title', sortable: false, flex: 1 },
+    { field: 'artist', headerName: 'Artist', sortable: false, flex: 1 },
+    { 
+      field: 'spotify_status',
+      headerName: 'Spotify Status',
+      sortable: false,
+      flex: 1,
+      renderCell: (params) => {
+        const song = params.row.song;
+        return (
+          <>
+            {song.spotify_status === "HARD_MATCH" ? song.spotify_status : <Button variant="outllined" size="small" onClick={() => launchLinkSearch(song, 'spotify')}>{song.spotify_status}</Button>}
+          </>
+        )
+      }
+    },
+    { 
+      field: 'youtube_status',
+      headerName: 'YouTube Status',
+      sortable: false,
+      flex: 1,
+      renderCell: (params) => {
+        const song = params.row.song;
+        return (
+          <>
+            {song.youtube_status === "HARD_MATCH" ? song.youtube_status : <Button variant="outlined" size="small" onClick={() => launchLinkSearch(song, 'youtube')}>{song.youtube_status}</Button>}
+          </>
+        )
+      }
+    },
+    { 
+      field: 'actions',
+      headerName: 'Actions',
+      sortable: false,
+      renderCell: (params) => {
+        const song = params.row.song;
+        return (
+          <>
+            <Button color="error" onClick={() => removeSong(song.song_id)}>Remove</Button>
+          </>
+        )
+      }
+    },
+  ]
 
   return (
     <div>
@@ -538,40 +614,45 @@ function Playlist() {
           <button onClick={() => setShowAddModal(false)}>Close</button>
         </div>
       )}
-
-      {showLinkModal && (
-        <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
-          <h2>Link a song</h2>
-          <input id="link_search" type="text" placeholder="Search for a song" onKeyDown={(event) => { if (event.key === 'Enter') linkSearch(); }} /><br />
-          <button onClick={linkSearch}>Search</button><br />
-          <br />
-          <h4>Search Results</h4>
-          <table border="1">
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Artist</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {linkSongResults.results && linkSongResults.results.map(song => (
-                <tr key={song.youtube_ref || song.spotify_ref}>
-                  <td>{song.title}</td>
-                  <td>{song.artist}</td>
-                  <td>
-                    <button onClick={() => linkSong(songToLink.song_id, platform, song.youtube_ref || song.spotify_ref)}>Link</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <br />
-
-          <button onClick={() => setShowLinkModal(false)}>Close</button>
-        </div>
-      )}
+      
+      <Modal
+        open={showLinkModal}
+      >
+        <Box style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
+          <Typography variant="h6">Link a Song</Typography>
+          <TextField id="link_search" type="text" placeholder="Search for a song" onKeyDown={(event) => { if (event.key === 'Enter') linkSearch();}}
+            value={linkSearchText} onChange={(e) => setLinkSearchText(e.target.value)} sx={{ width: '100%', mt: '20px', mb: '10px' }}
+          /><br/>
+          <Button variant="contained" size="small" onClick={linkSearch}>Search</Button><br/>
+          <Typography variant="subtitle1" sx={{ mt: '20px', mb: '10px' }}>Search Results</Typography>
+          <TableContainer component={Paper}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Title</TableCell>
+                  <TableCell>Arist</TableCell>
+                  <TableCell>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {linkSongResults.results && linkSongResults.results.map(song => (
+                  <>
+                  <TableRow key={song.youtube_ref || song.spotify_ref}>
+                    <TableCell>{song.title}</TableCell>
+                    <TableCell>{song.artist}</TableCell>
+                    <TableCell>
+                      <Button onClick={() => linkSong(songToLink.song_id, platform, song.youtube_ref || song.spotify_ref)}>Link</Button>
+                    </TableCell>
+                  </TableRow>
+                  </>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <br/>
+          <Button variant="contained" size="small" color="error" onClick={() => setShowLinkModal(false)}>Close</Button>
+        </Box>
+      </Modal>
 
 
       <div style={{ display: showPopup, position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
@@ -590,39 +671,36 @@ function Playlist() {
 
       <div style={{ padding: '20px' }}>
         <div>
-          <h2>Playlist: {playlist.name}</h2>
-          <p>Songs Count: {songs.length}</p>
-          <p>Spotify Status: {playlist.spotify_status}</p>
-          <p>YouTube Status: {playlist.youtube_status}</p>
-          <p>Privacy: {playlist.privacy}</p>
-          {playlist && (<button onClick={share}>Toggle Privacy</button>)}
-          {playlist && playlist.privacy === 'SHARED' && (<button onClick={copySharingLink}>Copy Sharing Link</button>)}
+          <Stack spacing={1}>
+            <Typography variant="h5">Playlist: {playlist.name}</Typography>
+            <Typography variant="subtitle1">Songs Count: {songs.length}</Typography>
+            <Typography variant="subtitle1">Spotify Status: {playlist.spotify_status}</Typography>
+            <Typography variant="subtitle1">YouTube Status: {playlist.youtube_status}</Typography>
+            <Typography variant="subtitle1">Privacy: {playlist.privacy}</Typography>
+            <Stack direction='row' spacing={2}>
+              {playlist && (<Button variant="contained" size="small" onClick={share}>Toggle Privacy</Button>)}
+              {playlist && playlist.privacy === 'SHARED' && (<Button size="small" variant="outlined" onClick={copySharingLink}>Copy Sharing Link</Button>)}
+            </Stack>
+          </Stack>
         </div>
-        <h3>Songs</h3>
-        <table border="1">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Artist</th>
-              <th>Spotify Status</th>
-              <th>YouTube Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {songs.map(song => (
-              <tr key={song.song_id}>
-                <td>{song.title}</td>
-                <td>{song.artist}</td>
-                <td>{song.spotify_status === "HARD_MATCH" ? song.spotify_status : <button onClick={() => launchLinkSearch(song, 'spotify')}>{song.spotify_status}</button>}</td>
-                <td>{song.youtube_status === "HARD_MATCH" ? song.youtube_status : <button onClick={() => launchLinkSearch(song, 'youtube')}>{song.youtube_status}</button>}</td>
-                <td>
-                  <button onClick={() => removeSong(song.song_id)}>Remove</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+
+        <Typography variant="h5" sx={{ mt: '20px', mb: '15px' }}>Songs</Typography>
+        
+        <DataGrid
+          rows={songRows}
+          columns={columns}
+          disableColumnSelector
+          autoHeight
+          localeText={{ noRowsLabel: "No songs found", noResultsOverlayLabel: "No songs found" }}
+          initialState={{
+            columns: {
+              columnVisibilityModel: {
+                id: false,
+                song: false
+              }
+            }
+          }}
+        />
       </div>
     </div>
   );

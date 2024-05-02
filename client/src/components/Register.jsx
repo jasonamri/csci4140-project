@@ -14,14 +14,14 @@ import {
 } from '@mui/material';
 
 const Register = () => {
-    const [formData, setFormData] = useState({
-        username: '',
-        email: '',
-        password: ''
-    });
-    const [registrationResult, setRegistrationResult] = useState('');
+  const [formData, setFormData] = useState({
+      username: '',
+      email: '',
+      password: ''
+  });
+  const [registrationResult, setRegistrationResult] = useState('');
 
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
   const { username, email, password } = formData;
 

@@ -163,10 +163,7 @@ function Home() {
 
   // Toggle the new playlist modal
   const [open, setOpen] = React.useState(false);
-  const handleOpen = () => {
-    setOpen(true);
-    // TODO: focus on the input field
-  }
+  const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
   const openPlaylist = (pl_id) => {
@@ -252,7 +249,7 @@ function Home() {
 
   const columns = [
     { field: 'id' },
-    { field: 'name', headerName: 'Playlist Name', width: 150 },
+    { field: 'name', headerName: 'Playlist Name', flex: 1 },
     { field: 'privacy', headerName: 'Privacy', width: 100 },
     {
       field: 'songs',
@@ -260,15 +257,15 @@ function Home() {
       type: 'number',
       width: 100,
     },
-    { field: 'spotify_status', headerName: 'Spotify Status', width: 125 },
-    { field: 'youtube_status', headerName: 'YouTube Status', width: 125 },
+    { field: 'spotify_status', headerName: 'Spotify Status', flex: 1 },
+    { field: 'youtube_status', headerName: 'YouTube Status', flex: 1 },
     { field: 'spotify_ref' },
     { field: 'youtube_ref' },
     {
       field: 'actions',
       headerName: 'Actions',
       sortable: false,
-      width: '100%',
+      width: 600,
       renderCell: (params) => {
         const row = params.row;
         return (
@@ -364,7 +361,7 @@ function Home() {
         <Box sx={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
           <Stack spacing={1}>
             <Typography variant='h5'>Create New Playlist</Typography>
-            <TextField type="text" size="small" label="Playlist Name" variant="outlined" value={newPlaylistName} required onChange={(e) => setNewPlaylistName(e.target.value)} />
+            <TextField autoFocus type="text" size="small" label="Playlist Name" variant="outlined" value={newPlaylistName} required onChange={(e) => setNewPlaylistName(e.target.value)} />
             <br />
             <Button size="small" onClick={() => createPlaylist()} sx={{ mt: '10px', width: '240px' }}>Create Blank</Button>
             {/*<Button size="small" onClick={() => generatePlaylist()} sx={{ mt: '10px', width: '240px' }}>Create Recommended</Button>*/}
@@ -379,11 +376,9 @@ function Home() {
           rows={playlistRows}
           columns={columns}
           disableColumnSelector
+          autoHeight
           localeText={{ noRowsLabel: "No playlists found", noResultsOverlayLabel: "No playlists found" }}
           initialState={{
-            pagination: {
-              paginationModel: { page: 0, pageSize: 5 },
-            },
             columns: {
               columnVisibilityModel: {
                 id: false,
@@ -392,7 +387,6 @@ function Home() {
               }
             }
           }}
-          pageSizeOptions={[5, 10]}
           checkboxSelection
           onRowSelectionModelChange={(ids) => {
             setSelectedPlaylists(ids);
