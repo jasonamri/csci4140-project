@@ -24,7 +24,9 @@ import {
   TableHead,
   TableBody,
   Paper,
-  TablePagination
+  TablePagination,
+  Modal,
+  Stack
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
@@ -35,7 +37,7 @@ const Import = () => {
   const [playlistIdx, setPlaylistIdx] = useState('');
   const [songs, setSongs] = useState([]);
   const [readyToImport, setReadyToImport] = useState(false);
-  const [showPopup, setShowPopup] = useState("none");
+  const [showPopup, setShowPopup] = useState(false);
   const [popupSong1, setPopupSong1] = useState({});
   const [popupSong2, setPopupSong2] = useState({});
   const navigate = useNavigate();
@@ -126,13 +128,13 @@ const Import = () => {
 
   const mergeVerification = (song1, song2) => {
     return new Promise((resolve, reject) => {
-      setShowPopup("block");
+      setShowPopup(true);
       document.getElementById('popup-yes').addEventListener('click', () => {
-        setShowPopup("none");
+        setShowPopup(false);
         resolve(true);
       });
       document.getElementById('popup-no').addEventListener('click', () => {
-        setShowPopup("none");
+        setShowPopup(false);
         resolve(false);
       });
       setPopupSong1(song1);
@@ -338,20 +340,26 @@ const Import = () => {
       </AppBar>
 
       <div style={{ marginLeft: '20px', marginTop: '20px', marginRight: '20px' }}>
-        <Typography variant="h5">Import Playlist</Typography>
+        <Typography variant="h5" sx={{ fontWeight: 'bold' }}>Import Playlist</Typography>
 
-        <div style={{ display: showPopup, position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
-          <h2>Merge Songs?</h2>
-          <p>Do you want to merge these songs?</p>
-          <b>Song 1:</b>
-          <p>Title: {popupSong1.title}</p>
-          <p>Artist: {popupSong1.artist}</p>
-          <b>Song 2:</b>
-          <p>Title: {popupSong2.title}</p>
-          <p>Artist: {popupSong2.artist}</p>
-          <button id="popup-yes">Yes</button>
-          <button id="popup-no">No</button>
-        </div>
+        <Modal keepMounted open={showPopup}>
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
+            <Stack spacing={1}>
+              <Typography variant="h5" sx={{ fontWeight: 'bold' }}>Merge Songs?</Typography>
+              <Typography variant="subtitle1">Do you want to merge these songs?</Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Song 1:</Typography>
+              <Typography variant="subtitle1">Title: {popupSong1.title}</Typography>
+              <Typography variant="subtitle1">Artist: {popupSong1.artist}</Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Song 2:</Typography>
+              <Typography variant="subtitle1">Title: {popupSong2.title}</Typography>
+              <Typography variant="subtitle1">Artist: {popupSong2.artist}</Typography>
+              <Stack direction="row" spacing={1}>
+                <Button id="popup-yes" variant="contained" size="small">Yes</Button>
+                <Button id="popup-no" variant="contained" color="error" size="small">No</Button>
+              </Stack>
+            </Stack>
+          </div>
+        </Modal>
 
         <div>
           <FormControl size="small" sx={{ width: '200px', mt: '15px' }}>
@@ -408,11 +416,11 @@ const Import = () => {
             <TableContainer component={Paper}>
               <Table size="small">
                 <TableHead>
-                  <TableRow>
-                    <TableCell>Title</TableCell>
-                    <TableCell>Artist</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Actions</TableCell>
+                  <TableRow >
+                    <TableCell sx={{ fontWeight: 'bold' }}>Title</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Artist</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>

@@ -205,11 +205,11 @@ function Home() {
             variant="subtitle1"
             component="div"
           >
-            {numSelected} selected
+            {numSelected} playlists selected
           </Typography>
         ) : (
           <Typography
-            sx={{ flex: '1 1 100%' }}
+            sx={{ flex: '1 1 100%', fontWeight: 'bold' }}
             variant="h6"
             id="tableTitle"
             component="div"
@@ -257,19 +257,19 @@ function Home() {
       type: 'number',
       width: 100,
     },
-    { field: 'spotify_status', headerName: 'Spotify Status', flex: 1 },
-    { field: 'youtube_status', headerName: 'YouTube Status', flex: 1 },
+    { field: 'spotify_status', headerName: 'Spotify Status', width: 150 },
+    { field: 'youtube_status', headerName: 'YouTube Status', width: 150 },
     { field: 'spotify_ref' },
     { field: 'youtube_ref' },
     {
       field: 'actions',
       headerName: 'Actions',
       sortable: false,
-      width: 600,
+      width: 660,
       renderCell: (params) => {
         const row = params.row;
         return (
-          <>
+          <div>
             <Button size="small" onClick={() => openPlaylist(row.id)}>Open</Button>
             {/* Pull */}
             {(row.spotify_status === 'LINKED' || row.spotify_status === 'LINKED_MODIFIED') && (
@@ -294,7 +294,7 @@ function Home() {
             {(row.youtube_status === 'NOT_LINKED') && (
               <Button size="small" onClick={() => exportPlaylist(row.id, 'youtube', row.name)}>Export to YouTube</Button>
             )}
-          </>
+          </div>
         )
       }
     },
@@ -370,9 +370,14 @@ function Home() {
         </Box>
       </Modal>
 
-      <div style={{ height: 400, width: '90%', display: 'block', margin: 'auto', marginTop: '20px' }}>
+      <div style={{ height: 400, width: '95%', display: 'block', margin: 'auto', marginTop: '20px' }}>
         <EnhancedTableToolbar numSelected={selectedPlaylists.length}></EnhancedTableToolbar>
         <DataGrid
+          sx={{
+            '.MuiDataGrid-columnHeaderTitle': { 
+              fontWeight: 'bold'
+            }
+          }}
           rows={playlistRows}
           columns={columns}
           disableColumnSelector

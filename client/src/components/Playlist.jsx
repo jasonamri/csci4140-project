@@ -35,7 +35,7 @@ function Playlist() {
   const [linkSongResults, setLinkSongResults] = useState({});
   const [showAddModal, setShowAddModal] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
-  const [showPopup, setShowPopup] = useState("none");
+  const [showPopup, setShowPopup] = useState(false);
   const [popupSong1, setPopupSong1] = useState({});
   const [popupSong2, setPopupSong2] = useState({});
   const [platform, setPlatform] = useState('');
@@ -217,21 +217,17 @@ function Playlist() {
     setAddSongResults(results);
   }
 
-  // let resolveMerge;
-  // let rejectMerge;
   const mergeVerification = (song1, song2) => {
     return new Promise((resolve, reject) => {
-      setShowPopup("block");
+      setShowPopup(true);
       document.getElementById('popup-yes').addEventListener('click', () => {
-        setShowPopup("none");
+        setShowPopup(false);
         resolve(true);
       });
       document.getElementById('popup-no').addEventListener('click', () => {
-        setShowPopup("none");
+        setShowPopup(false);
         resolve(false);
       });
-      // resolveMerge = resolve;
-      // rejectMerge = reject;
       setPopupSong1(song1);
       setPopupSong2(song2);
     });
@@ -416,7 +412,7 @@ function Playlist() {
         const song = params.row.song;
         return (
           <>
-            {song.spotify_status === "HARD_MATCH" ? song.spotify_status : <Button variant="outllined" size="small" onClick={() => launchLinkSearch(song, 'spotify')}>{song.spotify_status}</Button>}
+            {song.spotify_status === "HARD_MATCH" ? song.spotify_status : <Button variant="outlined" size="small" onClick={() => launchLinkSearch(song, 'spotify')}>{song.spotify_status}</Button>}
           </>
         )
       }
@@ -547,7 +543,7 @@ function Playlist() {
       
       <Modal open={showAddModal} onClose={handleCloseAddModal} sx={{ top: '10%', left: '20%', right: '20%', overflow: 'scroll', height: '500px', width: 'auto', border: '1px solid black' }}>
         <Box sx={{ backgroundColor: 'white', padding: '20px' }}>
-          <Typography variant="h6">Add a Song</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Add a Song</Typography>
           <TextField id="add_search" type="text" placeholder="Search for a song" onKeyDown={(event) => { if (event.key === 'Enter') addSearch(); }}
             value={addSearchText} onChange={(e) => setAddSearchText(e.target.value)} sx={{ width: '100%', mt: '20px', mb: '10px' }} autoFocus
           /><br/>
@@ -558,9 +554,9 @@ function Playlist() {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Title</TableCell>
-                  <TableCell>Artist</TableCell>
-                  <TableCell>Actions</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Title</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Artist</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -584,9 +580,9 @@ function Playlist() {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Title</TableCell>
-                  <TableCell>Artist</TableCell>
-                  <TableCell>Actions</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Title</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Artist</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -596,7 +592,7 @@ function Playlist() {
                     <TableCell>{song.title}</TableCell>
                     <TableCell>{song.artist}</TableCell>
                     <TableCell>
-                      <Button size="small" onClick={() => addSong("spotify", song.spotify_ref)}>Add from Spotify</Button>
+                      <Button sx={{ whiteSpace: 'nowrap' }} size="small" onClick={() => addSong("spotify", song.spotify_ref)}>Add from Spotify</Button>
                     </TableCell>
                   </TableRow>
                   </>
@@ -610,9 +606,9 @@ function Playlist() {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Title</TableCell>
-                  <TableCell>Artist</TableCell>
-                  <TableCell>Actions</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Title</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Artist</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -637,7 +633,7 @@ function Playlist() {
       
       <Modal open={showLinkModal} onClose={handleCloseLinkModal}>
         <Box style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
-          <Typography variant="h6">Link a Song</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Link a Song</Typography>
           <TextField id="link_search" type="text" placeholder="Search for a song" onKeyDown={(event) => { if (event.key === 'Enter') linkSearch();}}
             value={linkSearchText} onChange={(e) => setLinkSearchText(e.target.value)} sx={{ width: '100%', mt: '20px', mb: '10px' }} autoFocus
           /><br/>
@@ -647,9 +643,9 @@ function Playlist() {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Title</TableCell>
-                  <TableCell>Artist</TableCell>
-                  <TableCell>Actions</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Title</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Artist</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -672,38 +668,30 @@ function Playlist() {
         </Box>
       </Modal>
       
-      {/* <Modal open={showPopup}>
+      <Modal keepMounted open={showPopup}>
         <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
-          <h2>Merge Songs?</h2>
-          <p>Do you want to merge these songs?</p>
-          <b>Song 1:</b>
-          <p>Title: {popupSong1.title}</p>
-          <p>Artist: {popupSong1.artist}</p>
-          <b>Song 2:</b>
-          <p>Title: {popupSong2.title}</p>
-          <p>Artist: {popupSong2.artist}</p>
-          <button onClick={ () => { resolveMerge(); setShowPopup(false); }}>Yes</button>
-          <button onClick={ ()=> { rejectMerge(); setShowPopup(false); }}>No</button>
+          <Stack spacing={1}>
+            <Typography variant="h5" sx={{ fontWeight: 'bold' }}>Merge Songs?</Typography>
+            <Typography variant="subtitle1">Do you want to merge these songs?</Typography>
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Song 1:</Typography>
+            <Typography variant="subtitle1">Title: {popupSong1.title}</Typography>
+            <Typography variant="subtitle1">Artist: {popupSong1.artist}</Typography>
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Song 2:</Typography>
+            <Typography variant="subtitle1">Title: {popupSong2.title}</Typography>
+            <Typography variant="subtitle1">Artist: {popupSong2.artist}</Typography>
+            <Stack direction="row" spacing={1}>
+              <Button id="popup-yes" variant="contained" size="small">Yes</Button>
+              <Button id="popup-no" variant="contained" color="error" size="small">No</Button>
+            </Stack>
+          </Stack>
         </div>
-      </Modal> */}
-      <div style={{ display: showPopup, position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
-        <h2>Merge Songs?</h2>
-        <p>Do you want to merge these songs?</p>
-        <b>Song 1:</b>
-        <p>Title: Placeholder title</p>
-        <p>Artist: Placeholder artist</p>
-        <b>Song 2:</b>
-        <p>Title: Placeholder title</p>
-        <p>Artist: Placeholder artist</p>
-        <button id="popup-yes">Yes</button>
-        <button id="popup-no">No</button>
-      </div>
+      </Modal>
 
 
       <div style={{ padding: '20px' }}>
         <div>
           <Stack spacing={1}>
-            <Typography variant="h5">Playlist: {playlist.name}</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 'bold' }}>Playlist: {playlist.name}</Typography>
             <Typography variant="subtitle1">Songs Count: {songs.length}</Typography>
             <Typography variant="subtitle1">Spotify Status: {playlist.spotify_status}</Typography>
             <Typography variant="subtitle1">YouTube Status: {playlist.youtube_status}</Typography>
@@ -715,9 +703,14 @@ function Playlist() {
           </Stack>
         </div>
 
-        <Typography variant="h5" sx={{ mt: '20px', mb: '15px' }}>Songs</Typography>
+        <Typography variant="h5" sx={{ mt: '20px', mb: '15px', fontWeight: 'bold' }}>Songs</Typography>
         
         <DataGrid
+          sx={{
+            '.MuiDataGrid-columnHeaderTitle': { 
+              fontWeight: 'bold'
+            }
+          }}
           rows={songRows}
           columns={columns}
           disableColumnSelector
