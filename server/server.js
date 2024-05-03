@@ -36,17 +36,9 @@ app.use(session({
 }));
 
 // serve React build
-/*
-const DIST_DIR = path.join('../', 'client', 'dist');
+const DIST_DIR = path.join(__dirname, '../', 'client', 'build');
 const HTML_FILE = path.join(DIST_DIR, 'index.html');
-
 app.use(express.static(DIST_DIR));
-
-app.get('/', (req, res) => {
-  res.sendFile(HTML_FILE);
-});
-*/
-
 
 // server backend
 app.use('/api/', indexRouter);
@@ -56,6 +48,11 @@ app.use('/api/auth', authRouter);
 app.use('/api/pl', playlistRouter);
 app.use('/api/song', songRouter);
 app.use('/api/functions', functionsRouter);
+
+// Route to serve React build for all other routes
+app.get('/*', (req, res) => {
+  res.sendFile(HTML_FILE);
+});
 
 // launch express
 const port = process.env.PORT || 8080;

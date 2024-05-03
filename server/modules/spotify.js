@@ -47,7 +47,7 @@ class Spotify {
     static spotifyApi = new SpotifyWebApi({
         clientId: process.env.SPOTIFY_CLIENT_ID,
         clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-        redirectUri: 'http://localhost:3000/callback-spotify'
+        redirectUri: process.env.ENV === 'prod' ? process.env.BASE_URL + '/callback-spotify' : 'http://localhost:3000/callback-spotify'
     });
 
 
@@ -151,7 +151,7 @@ class Spotify {
     static async recommend(access_token, songs, count) {
         // filter out songs without spotify_ref
         songs = songs.filter(song => song.spotify_ref);
-        
+
         // randomly select up ot 5 seed tracks
         songs = songs.sort(() => Math.random() - 0.5);
         songs = songs.slice(0, 5);
