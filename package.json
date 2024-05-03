@@ -1,30 +1,24 @@
 {
-  "name": "mern-starter",
+  "name": "smart-playlist-manager",
   "version": "1.0.0",
-  "description": "MERN starter full stack app",
+  "description": "",
   "engines": {
     "node": ">=12.13.1"
   },
   "scripts": {
     "lint": "eslint --ignore-path .gitignore .",
-    "dev": "concurrently \"cd server && npm run dev-start\" \"cd client && npm run start\"",
-    "start": "cd server && npm run start",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "client-install": "cd client && npm install",
-    "server-install": "cd server && npm install",
-    "postinstall": "npm run client-install && npm run server-install",
-    "client-build": "cd client && npm run clean && npm run build",
-    "server-build": "cd server && npm run clean && npm run build",
-    "build": "npm run client-build && npm run server-build"
+    "dev": "concurrently \"cd server && npm dev-start\" \"cd client && npm start\"",
+    "start": "concurrently \"cd server && npm start\" \"cd client && npm start\"",
+    "prod": "cd client && npm run build && cd ../server && npm start",
+    "install-client": "cd client && npm install",
+    "install-server": "cd server && npm install",
+    "install-all": "npm install && cd client && npm install && cd ../server && npm install"
   },
-  "keywords": [
-    "mern-starter",
-    "mern",
-    "full-stack-javascript"
-  ],
-  "author": "codeagni",
+  "keywords": [],
+  "author": "Jason Amri and Jon Wei",
   "license": "MIT",
   "devDependencies": {
+    "concurrently": "^8.2.2",
     "eslint": "^6.1.0",
     "eslint-config-airbnb": "^18.0.1",
     "eslint-config-airbnb-base": "^14.0.0",
@@ -34,7 +28,7 @@
     "eslint-plugin-prettier": "^3.1.1",
     "eslint-plugin-react": "^7.17.0",
     "eslint-plugin-react-hooks": "^1.7.0",
-    "nodemon": "^2.0.2",
+    "nodemon": "^2.0.22",
     "prettier": "^1.19.1"
   }
 }

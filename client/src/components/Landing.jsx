@@ -1,47 +1,48 @@
-import React, { Component } from 'react';
-import { connect } from 'react-redux';
-import PropTypes from 'prop-types';
-import { fetchDBStatus } from '../actions/databaseActions';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
-class Landing extends Component {
-  componentDidMount() {
-    const { fetchDBStatus } = this.props;
-    fetchDBStatus();
-  }
+const LandingPage = () => {
+  const [authStatus, setAuthStatus] = useState({});
+  const navigate = useNavigate();
 
-  render() {
-    const { status } = this.props;
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        const response = await axios.get('/auth/status');
+        setAuthStatus(response.data);
+      } catch (error) {
+        console.error('Error fetching auth status:', error);
+      }
+    };
 
-    return (
-      <div>
-        <div className="container">
-          {status === undefined ? (
-            'Connecting to database ...'
-          ) : (
-            <div
-              className={status === true ? 'led-green' : 'led-red'}
-              style={{ display: 'inline-block' }}
-            />
-          )}
-          {status !== undefined &&
-            (status === false
-              ? 'Database connection failed'
-              : 'Database connection successful')}
+    checkAuthStatus();
+  }, []);
+
+  const handleLoginClick = () => {
+    navigate('/login');
+  };
+
+  const handleRegisterClick = () => {
+    navigate('/register');
+  };
+
+  return (
+    <div className="landing-page">
+      <h1>Welcome to Smart Playlist Manager</h1>
+      {authStatus.status === 'logged-in' ? (
+        <div>
+          <p>Hello, {authStatus.username}</p>
+          <button onClick={() => navigate('/home')}>Go to Home</button>
         </div>
-      </div>
-    );
-  }
-}
-
-Landing.propTypes = {
-  fetchDBStatus: PropTypes.func.isRequired,
-  status: PropTypes.bool,
+      ) : (
+        <div>
+          <button onClick={handleLoginClick}>Login</button>
+          <button onClick={handleRegisterClick}>Register</button>
+        </div>
+      )}
+    </div>
+  );
 };
 
-Landing.defaultProps = {
-  status: undefined,
-};
-
-const mapStateToProps = (state) => ({ status: state.db.status });
-
-export default connect(mapStateToProps, { fetchDBStatus })(Landing);
+export default LandingPage;

@@ -1,16 +1,11 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { Provider } from 'react-redux';
-import { createStore, applyMiddleware } from 'redux';
-import { thunk } from 'redux-thunk';
-import rootReducer from './reducers';
 import axios from 'axios';
-
 
 import App from './App';
 
 // Set up axios
-axios.defaults.baseURL = 'http://localhost:8080/api';
+axios.defaults.baseURL = process.env.ENV === 'prod' ? process.env.BASE_URL + '/api' : 'http://localhost:8080/api';
 axios.defaults.withCredentials = true;
 axios.interceptors.response.use(
   function (response) {
@@ -37,14 +32,7 @@ axios.interceptors.response.use(
   }
 );
 
-
-const middleware = [thunk];
-
-const store = createStore(rootReducer, applyMiddleware(...middleware));
-
 const root = createRoot(document.getElementById("root"));
 root.render(
-  <Provider store={store}>
-    <App />
-  </Provider>
+  <App />
 );
