@@ -12,7 +12,19 @@ import {
   Avatar,
   Button,
   Tooltip,
-  MenuItem
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
+  Alert,
+  TableContainer,
+  Table,
+  TableCell,
+  TableRow,
+  TableHead,
+  TableBody,
+  Paper,
+  TablePagination
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
@@ -263,6 +275,18 @@ const Import = () => {
     setAnchorElUser(null);
   };
 
+  const [page, setPage] = React.useState(0);
+  const [rowsPerPage, setRowsPerPage] = React.useState(25);
+
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(+event.target.value);
+    setPage(0);
+  };
+
   return (
     <div>
       <AppBar position="static" sx={{ height: '70px' }}>
@@ -313,85 +337,115 @@ const Import = () => {
         </Container>
       </AppBar>
 
-      <h2>Import Playlist</h2>
+      <div style={{ marginLeft: '20px', marginTop: '20px', marginRight: '20px' }}>
+        <Typography variant="h5">Import Playlist</Typography>
 
-      <div style={{ display: showPopup, position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
-        <h2>Merge Songs?</h2>
-        <p>Do you want to merge these songs?</p>
-        <b>Song 1:</b>
-        <p>Title: {popupSong1.title}</p>
-        <p>Artist: {popupSong1.artist}</p>
-        <b>Song 2:</b>
-        <p>Title: {popupSong2.title}</p>
-        <p>Artist: {popupSong2.artist}</p>
-        <button id="popup-yes">Yes</button>
-        <button id="popup-no">No</button>
-      </div>
-
-      <div>
-        <label htmlFor="platform">Select Platform:</label>
-        <select id="platform" value={platform} onChange={(event) => { setPlatform(event.target.value) }} disabled={disabled}>
-          <option value="">Select Platform</option>
-          <option value="spotify">Spotify</option>
-          <option value="youtube">Youtube</option>
-        </select>
-      </div>
-
-      {platform && playlists.length === 0 && (
-        <span>Loading playlists...</span>
-      )}
-
-      {playlists.length > 0 && (
-        <div>
-          <label htmlFor="playlist">Select Playlist:</label>
-          <select id="playlist" value={playlistIdx} onChange={(event) => { setPlaylistIdx(event.target.value) }} disabled={disabled}>
-            <option value="">Select Playlist</option>
-            {playlists.map((playlist, idx) => (
-              <option key={idx} value={idx}>
-                {playlist.name}
-              </option>
-            ))}
-          </select>
+        <div style={{ display: showPopup, position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
+          <h2>Merge Songs?</h2>
+          <p>Do you want to merge these songs?</p>
+          <b>Song 1:</b>
+          <p>Title: {popupSong1.title}</p>
+          <p>Artist: {popupSong1.artist}</p>
+          <b>Song 2:</b>
+          <p>Title: {popupSong2.title}</p>
+          <p>Artist: {popupSong2.artist}</p>
+          <button id="popup-yes">Yes</button>
+          <button id="popup-no">No</button>
         </div>
-      )}
 
-      {playlistIdx && songs.length === 0 && (
-        <span>Loading songs...</span>
-      )}
-
-      {songs.length > 0 && (
         <div>
-          <h3>Songs</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Artist</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {songs.map(song => (
-                <tr key={song.id}>
-                  <td>{song.title}</td>
-                  <td>{song.artist}</td>
-                  <td>{song.precreateResult ? song.precreateResult.data.message : 'Loading...'}</td>
-                  <td>{song.precreateResult ? (
-                    song.precreateResult.data.status === 'soft_match_unilateral' ? (
-                      <button onClick={() => runMergeVerification(song)}>Merge?</button>
-                    ) : 'None'
-                  ) : 'Loading...'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <FormControl size="small" sx={{ width: '200px', mt: '15px' }}>
+            <InputLabel id="platform-label">Select Platform</InputLabel>
+            <Select
+              labelId="platform-label"
+              id="platform"
+              value={platform}
+              label="Select Platform"
+              onChange={(event) => { setPlatform(event.target.value) }}
+              disabled={disabled}
+            >
+              <MenuItem value="spotify">Spotify</MenuItem>
+              <MenuItem value="youtube">YouTube</MenuItem>
+            </Select>
+          </FormControl>
         </div>
-      )
-      }
 
-      <br />
-      <button onClick={runImport} disabled={!readyToImport}>{pl_id ? "Pull" : "Import"}</button>
+        {platform && playlists.length === 0 && (
+          <><Alert severity="info" sx={{ mt: '20px', width: '200px' }}>Loading playlists...</Alert></>
+        )}
+
+        {playlists.length > 0 && (
+          <div>
+            <FormControl size="small" sx={{ width: '200px', mt: '20px' }}>
+              <InputLabel id="playlist-label">Select Playlist</InputLabel>
+              <Select
+                labelId="playlist-label"
+                id="playlist"
+                value={playlistIdx}
+                label="Select Platform"
+                onChange={(event) => { setPlaylistIdx(event.target.value) }}
+                disabled={disabled}
+              >
+                {playlists.map((playlist, idx) => (
+                  <MenuItem key={idx} value={idx}>
+                    {playlist.name}
+                  </MenuItem>
+                ))}
+                <MenuItem value="spotify">Spotify</MenuItem>
+                <MenuItem value="youtube">YouTube</MenuItem>
+              </Select>
+            </FormControl>
+          </div>
+        )}
+
+        {playlistIdx && songs.length === 0 && (
+          <><Alert severity="info" sx={{ mt: '20px', width: '200px' }}>Loading songs...</Alert></>
+        )}
+
+        {songs.length > 0 && (
+          <div>
+            <Typography variant="h5" sx={{ mt: '20px', mb: '10px' }}>Songs</Typography>
+            <TableContainer component={Paper}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Title</TableCell>
+                    <TableCell>Artist</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {songs.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(song => (
+                    <TableRow key={song.id}>
+                      <TableCell>{song.title}</TableCell>
+                      <TableCell>{song.artist}</TableCell>
+                      <TableCell>{song.precreateResult ? song.precreateResult.data.message : 'Loading...'}</TableCell>
+                      <TableCell>{song.precreateResult ? (
+                        song.precreateResult.data.status === 'soft_match_unilateral' ? (
+                          <Button size="small" onClick={() => runMergeVerification(song)}>Merge?</Button>
+                        ) : 'None'
+                      ) : 'Loading...'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <TablePagination
+                rowsPerPageOptions={[25, 50, 100]}
+                component="div"
+                count={songs.length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+              />
+            </TableContainer>
+          </div>
+        )
+        }
+        <br />
+        <Button variant="contained" size="small" onClick={runImport} disabled={!readyToImport}>{pl_id ? "Pull" : "Import"}</Button>
+      </div>
 
 
     </div >

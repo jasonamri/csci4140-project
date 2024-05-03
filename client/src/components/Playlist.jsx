@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -134,7 +134,7 @@ function Playlist() {
 
   let cancelTokenSource = null;
   const addSearch = async () => {
-    const query = document.getElementById('add_search').value;
+    const query = addSearchText;
 
     if (query.length < 3) {
       setAddSongResults({});
@@ -175,7 +175,6 @@ function Playlist() {
   let cancelTokenSource2 = null;
   const linkSearch = async () => {
     const query = linkSearchText;
-    // const query = document.getElementById('link_search').value;
 
     if (query.length < 3) {
       setLinkSongResults({});
@@ -218,6 +217,8 @@ function Playlist() {
     setAddSongResults(results);
   }
 
+  // let resolveMerge;
+  // let rejectMerge;
   const mergeVerification = (song1, song2) => {
     return new Promise((resolve, reject) => {
       setShowPopup("block");
@@ -229,6 +230,8 @@ function Playlist() {
         setShowPopup("none");
         resolve(false);
       });
+      // resolveMerge = resolve;
+      // rejectMerge = reject;
       setPopupSong1(song1);
       setPopupSong2(song2);
     });
@@ -363,8 +366,6 @@ function Playlist() {
   useEffect(() => {
     if (showAddModal) {
       setAddSongResults({});
-      document.getElementById('add_search').focus();
-      document.getElementById('add_search').value = '';
       getRecommendedSongs();
     }
   }, [showAddModal]);
@@ -396,6 +397,10 @@ function Playlist() {
   };
 
   const [linkSearchText, setLinkSearchText] = useState("");
+  const [addSearchText, setAddSearchText] = useState("");
+
+  const handleCloseLinkModal = () => setShowLinkModal(false);
+  const handleCloseAddModal = () => setShowAddModal(false);
 
   const columns = [
     { field: 'id' },
@@ -460,7 +465,10 @@ function Playlist() {
                 </Button>
               </Tooltip>
               <Button
-                onClick={() => setShowAddModal(true)}
+                onClick={() => {
+                  setShowAddModal(true);
+                  setAddSearchText("");
+                }}
                 sx={{ ml: '10px', my: 2, color: 'white', display: 'block' }}
               >
                 Add a song
@@ -536,92 +544,102 @@ function Playlist() {
           </Toolbar>
         </Container>
       </AppBar>
-
-      {showAddModal && (
-        <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
-          <h2>Add a song</h2>
-          <input id="add_search" type="text" placeholder="Search for a song" onKeyDown={(event) => { if (event.key === 'Enter') addSearch(); }} /><br />
-          <button onClick={addSearch}>Search</button><br />
-          <br />
-          <h4>Local Results</h4>
-          <table border="1">
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Artist</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {addSongResults.local && addSongResults.local.map(song => (
-                <tr key={song.song_id}>
-                  <td>{song.title}</td>
-                  <td>{song.artist}</td>
-                  <td>
-                    <button onClick={() => addSong("local", song.song_id)}>Add from Local</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <h4>Spotify Results {addSongResults.spotifyIsRecommended && ('(Recommended)')}</h4>
-          <table border="1">
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Artist</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {addSongResults.spotify && addSongResults.spotify.map(song => (
-                <tr key={song.spotify_ref}>
-                  <td>{song.title}</td>
-                  <td>{song.artist}</td>
-                  <td>
-                    <button onClick={() => addSong("spotify", song.spotify_ref)}>Add from Spotify</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <h4>YouTube Results</h4>
-          <table border="1">
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Artist</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {addSongResults.youtube && addSongResults.youtube.map(song => (
-                <tr key={song.youtube_ref}>
-                  <td>{song.title}</td>
-                  <td>{song.artist}</td>
-                  <td>
-                    <button onClick={() => addSong("youtube", song.youtube_ref)}>Add from YouTube</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <br />
-
-          <button onClick={() => setShowAddModal(false)}>Close</button>
-        </div>
-      )}
       
-      <Modal
-        open={showLinkModal}
-      >
+      <Modal open={showAddModal} onClose={handleCloseAddModal} sx={{ top: '10%', left: '20%', right: '20%', overflow: 'scroll', height: '500px', width: 'auto', border: '1px solid black' }}>
+        <Box sx={{ backgroundColor: 'white', padding: '20px' }}>
+          <Typography variant="h6">Add a Song</Typography>
+          <TextField id="add_search" type="text" placeholder="Search for a song" onKeyDown={(event) => { if (event.key === 'Enter') addSearch(); }}
+            value={addSearchText} onChange={(e) => setAddSearchText(e.target.value)} sx={{ width: '100%', mt: '20px', mb: '10px' }} autoFocus
+          /><br/>
+          <Button size="small" variant="contained" onClick={addSearch}>Search</Button><br />
+          <br />
+          <Typography variant="subtitle1" sx={{ mb: '5px' }}>Local Results</Typography>
+          <TableContainer component={Paper}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Title</TableCell>
+                  <TableCell>Artist</TableCell>
+                  <TableCell>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {addSongResults.local && addSongResults.local.map(song => (
+                  <>
+                  <TableRow key={song.song_id}>
+                    <TableCell>{song.title}</TableCell>
+                    <TableCell>{song.artist}</TableCell>
+                    <TableCell>
+                      <Button size="small" onClick={() => addSong("local", song.song_id)}>Add from Local</Button>
+                    </TableCell>
+                  </TableRow>
+                  </>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+
+          <Typography variant="subtitle1" sx={{ mt: '15px', mb: '5px' }}>Spotify Results {addSongResults.spotifyIsRecommended && ('(Recommended)')}</Typography>
+          <TableContainer component={Paper}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Title</TableCell>
+                  <TableCell>Artist</TableCell>
+                  <TableCell>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {addSongResults.spotify && addSongResults.spotify.map(song => (
+                  <>
+                  <TableRow key={song.spotify_ref}>
+                    <TableCell>{song.title}</TableCell>
+                    <TableCell>{song.artist}</TableCell>
+                    <TableCell>
+                      <Button size="small" onClick={() => addSong("spotify", song.spotify_ref)}>Add from Spotify</Button>
+                    </TableCell>
+                  </TableRow>
+                  </>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          
+          <Typography variant="subtitle1" sx={{ mt: '15px', mb: '5px' }}>YouTube Results</Typography>
+          <TableContainer component={Paper}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Title</TableCell>
+                  <TableCell>Artist</TableCell>
+                  <TableCell>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {addSongResults.youtube && addSongResults.youtube.map(song => (
+                  <>
+                  <TableRow key={song.youtube_ref}>
+                    <TableCell>{song.title}</TableCell>
+                    <TableCell>{song.artist}</TableCell>
+                    <TableCell>
+                      <Button sx={{ whiteSpace: 'nowrap' }} size="small" onClick={() => addSong("youtube", song.youtube_ref)}>Add from YouTube</Button>
+                    </TableCell>
+                  </TableRow>
+                  </>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <br/>
+          <Button variant="contained" size="small" color="error" onClick={handleCloseAddModal}>Close</Button>
+        </Box>
+      </Modal>
+      
+      <Modal open={showLinkModal} onClose={handleCloseLinkModal}>
         <Box style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
           <Typography variant="h6">Link a Song</Typography>
           <TextField id="link_search" type="text" placeholder="Search for a song" onKeyDown={(event) => { if (event.key === 'Enter') linkSearch();}}
-            value={linkSearchText} onChange={(e) => setLinkSearchText(e.target.value)} sx={{ width: '100%', mt: '20px', mb: '10px' }}
+            value={linkSearchText} onChange={(e) => setLinkSearchText(e.target.value)} sx={{ width: '100%', mt: '20px', mb: '10px' }} autoFocus
           /><br/>
           <Button variant="contained" size="small" onClick={linkSearch}>Search</Button><br/>
           <Typography variant="subtitle1" sx={{ mt: '20px', mb: '10px' }}>Search Results</Typography>
@@ -630,7 +648,7 @@ function Playlist() {
               <TableHead>
                 <TableRow>
                   <TableCell>Title</TableCell>
-                  <TableCell>Arist</TableCell>
+                  <TableCell>Artist</TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -641,7 +659,7 @@ function Playlist() {
                     <TableCell>{song.title}</TableCell>
                     <TableCell>{song.artist}</TableCell>
                     <TableCell>
-                      <Button onClick={() => linkSong(songToLink.song_id, platform, song.youtube_ref || song.spotify_ref)}>Link</Button>
+                      <Button size="small" onClick={() => linkSong(songToLink.song_id, platform, song.youtube_ref || song.spotify_ref)}>Link</Button>
                     </TableCell>
                   </TableRow>
                   </>
@@ -650,20 +668,33 @@ function Playlist() {
             </Table>
           </TableContainer>
           <br/>
-          <Button variant="contained" size="small" color="error" onClick={() => setShowLinkModal(false)}>Close</Button>
+          <Button variant="contained" size="small" color="error" onClick={handleCloseLinkModal}>Close</Button>
         </Box>
       </Modal>
-
-
+      
+      {/* <Modal open={showPopup}>
+        <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
+          <h2>Merge Songs?</h2>
+          <p>Do you want to merge these songs?</p>
+          <b>Song 1:</b>
+          <p>Title: {popupSong1.title}</p>
+          <p>Artist: {popupSong1.artist}</p>
+          <b>Song 2:</b>
+          <p>Title: {popupSong2.title}</p>
+          <p>Artist: {popupSong2.artist}</p>
+          <button onClick={ () => { resolveMerge(); setShowPopup(false); }}>Yes</button>
+          <button onClick={ ()=> { rejectMerge(); setShowPopup(false); }}>No</button>
+        </div>
+      </Modal> */}
       <div style={{ display: showPopup, position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', border: '1px solid black' }}>
         <h2>Merge Songs?</h2>
         <p>Do you want to merge these songs?</p>
         <b>Song 1:</b>
-        <p>Title: {popupSong1.title}</p>
-        <p>Artist: {popupSong1.artist}</p>
+        <p>Title: Placeholder title</p>
+        <p>Artist: Placeholder artist</p>
         <b>Song 2:</b>
-        <p>Title: {popupSong2.title}</p>
-        <p>Artist: {popupSong2.artist}</p>
+        <p>Title: Placeholder title</p>
+        <p>Artist: Placeholder artist</p>
         <button id="popup-yes">Yes</button>
         <button id="popup-no">No</button>
       </div>
@@ -692,13 +723,16 @@ function Playlist() {
           disableColumnSelector
           autoHeight
           localeText={{ noRowsLabel: "No songs found", noResultsOverlayLabel: "No songs found" }}
+          size="small"
+          pageSizeOptions={[25, 50, 100]}
           initialState={{
             columns: {
               columnVisibilityModel: {
                 id: false,
                 song: false
               }
-            }
+            },
+            pagination: { paginationModel: { pageSize: 25 } }
           }}
         />
       </div>

@@ -378,6 +378,7 @@ function Home() {
           disableColumnSelector
           autoHeight
           localeText={{ noRowsLabel: "No playlists found", noResultsOverlayLabel: "No playlists found" }}
+          pageSizeOptions={[10, 25, 50, 100]}
           initialState={{
             columns: {
               columnVisibilityModel: {
@@ -385,7 +386,8 @@ function Home() {
                 spotify_ref: false,
                 youtube_ref: false
               }
-            }
+            },
+            pagination: { paginationModel: { pageSize: 10 } }
           }}
           checkboxSelection
           onRowSelectionModelChange={(ids) => {
