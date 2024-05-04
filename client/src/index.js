@@ -5,7 +5,7 @@ import axios from 'axios';
 import App from './App';
 
 // Set up axios
-axios.defaults.baseURL = process.env.ENV === 'prod' ? process.env.BASE_URL + '/api' : 'http://localhost:8080/api';
+axios.defaults.baseURL = process.env.ENV === 'prod' ? process.env.PUBLIC_URL + '/api' : 'http://localhost:8080/api';
 axios.defaults.withCredentials = true;
 axios.interceptors.response.use(
   function (response) {
