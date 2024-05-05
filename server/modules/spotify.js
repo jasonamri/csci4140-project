@@ -47,7 +47,7 @@ class Spotify {
     static spotifyApi = new SpotifyWebApi({
         clientId: process.env.SPOTIFY_CLIENT_ID,
         clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-        redirectUri: process.env.ENV === 'prod' ? process.env.PUBLIC_URL + '/callback-spotify' : 'http://localhost:3000/callback-spotify'
+        redirectUri: process.env.CALLBACK_URL + '/callback-spotify'
     });
 
 

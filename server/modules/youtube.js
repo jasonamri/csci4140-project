@@ -49,7 +49,7 @@ class Youtube {
     static oauth2Client = new google.auth.OAuth2(
         process.env.YOUTUBE_CLIENT_ID,
         process.env.YOUTUBE_CLIENT_SECRET,
-        process.env.ENV === 'prod' ? process.env.PUBLIC_URL + '/callback-youtube' : 'http://localhost:3000/callback-youtube'
+        process.env.CALLBACK_URL + '/callback-youtube'
     );
 
 

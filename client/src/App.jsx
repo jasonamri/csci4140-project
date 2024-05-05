@@ -18,23 +18,23 @@ import CallbackSpotify from './components/CallbackSpotify';
 import CallbackYoutube from './components/CallbackYoutube';
 
 const App = () => (
-  <Router basename={process.env.ENV === "prod" ? process.env.PUBLIC_URL : ""}>
-    <Routes>
-      <Route exact path="/" element={< Landing />} />
-      <Route path="/home" element={< Home />} />
-      <Route path="/profile" element={< Profile />} />
-      <Route path="/playlist" element={< Playlist />} />
-      <Route path="/import" element={< Import />} />
-      <Route path="/share" element={< Share />} />
-      <Route path="/login" element={< Login />} />
-      <Route path="/register" element={< Register />} />
-      <Route path="/logout" element={< Logout />} />
-      <Route path="/spotify" element={< Spotify />} />
-      <Route path="/youtube" element={< Youtube />} />
-      <Route path="/callback-spotify" element={< CallbackSpotify />} />
-      <Route path="/callback-youtube" element={< CallbackYoutube />} />
-    </Routes>
-  </Router>
+    <Router basename={process.env.PUBLIC_URL}>
+      <Routes>
+        <Route exact path="/" element={< Landing />} />
+        <Route path="/home" element={< Home />} />
+        <Route path="/profile" element={< Profile />} />
+        <Route path="/playlist" element={< Playlist />} />
+        <Route path="/import" element={< Import />} />
+        <Route path="/share" element={< Share />} />
+        <Route path="/login" element={< Login />} />
+        <Route path="/register" element={< Register />} />
+        <Route path="/logout" element={< Logout />} />
+        <Route path="/spotify" element={< Spotify />} />
+        <Route path="/youtube" element={< Youtube />} />
+        <Route path="/callback-spotify" element={< CallbackSpotify />} />
+        <Route path="/callback-youtube" element={< CallbackYoutube />} />
+      </Routes>
+    </Router>
 );
 
 export default App;
