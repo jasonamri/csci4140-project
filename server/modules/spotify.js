@@ -149,6 +149,9 @@ class Spotify {
     }
 
     static async recommend(access_token, songs, count) {
+        // can't recommend with no seed
+        if (songs.length === 0) return [];
+
         // filter out songs without spotify_ref
         songs = songs.filter(song => song.spotify_ref);
 
