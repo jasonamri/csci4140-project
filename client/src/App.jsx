@@ -18,7 +18,7 @@ import CallbackSpotify from './components/CallbackSpotify';
 import CallbackYoutube from './components/CallbackYoutube';
 
 const App = () => (
-  <Router basename={process.env.PUBLIC_URL}>
+  <Router basename={process.env.ENV === "prod" ? process.env.PUBLIC_URL : ""}>
     <Routes>
       <Route exact path="/" element={< Landing />} />
       <Route path="/home" element={< Home />} />

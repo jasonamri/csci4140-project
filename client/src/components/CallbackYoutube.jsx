@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const CallbackYoutube = () => {
   const [message, setMessage] = useState('');
+  const navigate = useNavigate();
 
   const code = new URLSearchParams(window.location.search).get('code');
 
@@ -22,7 +24,12 @@ const CallbackYoutube = () => {
   return (
     <div>
       <h2>Callback Response</h2>
-      <p>{message}</p>
+      {message && (
+        <div>
+          <p>{message}</p>
+          <button onClick={() => navigate("/profile")}>Back to profile</button>
+        </div>
+      )}
     </div>
   );
 };
